@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, memo } from 'react';
+import { createPortal } from 'react-dom';
 import './Modal.css';
 
 interface ModalProps {
@@ -29,13 +30,14 @@ const Modal = memo(function Modal({ isOpen, onClose, title, children, footer, si
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
+  if (typeof document === 'undefined') return null;
 
-  return (
+  return createPortal((
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div className={`modal-content modal-${size}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{title}</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Fechar">
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Fechar">
             ×
           </button>
         </div>
@@ -43,7 +45,7 @@ const Modal = memo(function Modal({ isOpen, onClose, title, children, footer, si
         {footer ? <div className="modal-footer">{footer}</div> : null}
       </div>
     </div>
-  );
+  ), document.body);
 });
 
 export default Modal;

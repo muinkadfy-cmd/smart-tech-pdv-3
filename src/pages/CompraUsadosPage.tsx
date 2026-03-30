@@ -858,6 +858,7 @@ function CompraUsadosPage() {
                   <div className="usados-stock-actions">
                     {numFotos > 0 && (
                       <button
+                        type="button"
                         className="btn-ver-fotos usados-action-button"
                         onClick={() => abrirGaleria(u)}
                       >
@@ -866,6 +867,7 @@ function CompraUsadosPage() {
                     )}
                     {numDocs > 0 && (
                       <button
+                        type="button"
                         className="btn-ver-docs usados-action-button"
                         onClick={() => abrirDocumentos(u)}
                       >
@@ -875,6 +877,7 @@ function CompraUsadosPage() {
 
                     
                     <button
+                      type="button"
 
 
                     
@@ -901,6 +904,7 @@ function CompraUsadosPage() {
 
                     
                     <button
+                      type="button"
 
 
                     
@@ -925,6 +929,7 @@ function CompraUsadosPage() {
 
 
                     <button
+                      type="button"
 
 
 
@@ -951,6 +956,7 @@ function CompraUsadosPage() {
 
                     
                     <button
+                      type="button"
 
 
                     
