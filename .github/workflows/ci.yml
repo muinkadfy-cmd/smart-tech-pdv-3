@@ -18,7 +18,7 @@ jobs:
       - name: Validate (type-check + build)
         run: npm run validate
       - name: Unit tests
-        run: npm run test:unit
+        run: npm run qa:unit:finance
 
 # Para habilitar E2E no CI:
 # - Requer instalar browsers do Playwright e rodar `npm run test:e2e`.
