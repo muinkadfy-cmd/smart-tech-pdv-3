@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Modal from './ui/Modal';
 import type { UsadoArquivo } from '@/types';
 import { usadosArquivosRepo } from '@/lib/repositories';
-import { downloadFile, getUsadoStorageLabel, isLocalUsadosBucket, LOCAL_USADOS_BUCKET } from '@/lib/usados-uploads';
+import { downloadFile, getUsadoStorageLabel, isLocalUsadosBucket, saveFileToDevice } from '@/lib/usados-uploads';
 import { logger } from '@/utils/logger';
 import { resolveRemoteUsadoPreviewUrl } from '@/lib/capabilities/usados-preview-remote-adapter';
 import { openExternalUrlByPlatform } from '@/lib/capabilities/external-url-adapter';
@@ -115,6 +115,14 @@ export default function DocumentosUsadosModal({ usadoId, titulo, isOpen, onClose
     void openExternalUrlByPlatform(item.url);
   };
 
+  const downloadDoc = async (item: DocItem) => {
+    try {
+      await saveFileToDevice(item.arquivo.bucket, item.arquivo.path, item.arquivo.originalName || undefined);
+    } catch (e) {
+      logger.error('[DocumentosUsadosModal] Erro ao baixar documento', e);
+    }
+  };
+
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose} title={`📄 Documentos - ${titulo}`} size="lg">
@@ -175,6 +183,7 @@ export default function DocumentosUsadosModal({ usadoId, titulo, isOpen, onClose
                 </div>
               </div>
               <div className="docs-preview-actions">
+                <button type="button" className="docs-btn" onClick={() => void downloadDoc(selected)}>Baixar</button>
                 <button type="button" className="docs-btn" onClick={() => openInNewTab(selected)}>Abrir</button>
                 <button type="button" className="docs-btn docs-btn-close" onClick={() => setSelected(null)}>✕</button>
               </div>

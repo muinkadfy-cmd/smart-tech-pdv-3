@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Modal from './ui/Modal';
 import { getFotosComUrls } from '@/lib/usados-fotos';
 import type { UsadoArquivo } from '@/types';
+import { getUsadoStorageLabel, isLocalUsadosBucket, saveFileToDevice } from '@/lib/usados-uploads';
 import './GaleriaUsados.css';
 
 interface GaleriaUsadosProps {
@@ -66,6 +67,10 @@ function GaleriaUsados({ usadoId, titulo, isOpen, onClose }: GaleriaUsadosProps)
 
     setIndexExpandida(novoIndex);
     setFotoExpandida(fotos[novoIndex]);
+  };
+
+  const baixarFoto = async (foto: FotoComUrl) => {
+    await saveFileToDevice(foto.arquivo.bucket, foto.arquivo.path, foto.arquivo.originalName || undefined);
   };
 
   // Navegação por teclado
@@ -136,16 +141,33 @@ function GaleriaUsados({ usadoId, titulo, isOpen, onClose }: GaleriaUsadosProps)
       {fotoExpandida && (
         <div className="galeria-fullscreen" onClick={fecharExpandida}>
           <div className="galeria-fullscreen-header">
-            <span className="galeria-contador">
-              {indexExpandida + 1} / {fotos.length}
-            </span>
-            <button
-              className="galeria-close-btn"
-              onClick={fecharExpandida}
-              aria-label="Fechar"
-            >
-              ✕
-            </button>
+            <div className="galeria-header-main">
+              <span className="galeria-contador">
+                {indexExpandida + 1} / {fotos.length}
+              </span>
+              <span className={`galeria-storage-badge ${isLocalUsadosBucket(fotoExpandida.arquivo.bucket) ? 'is-local' : 'is-remote'}`}>
+                {getUsadoStorageLabel(fotoExpandida.arquivo.bucket)}
+              </span>
+            </div>
+            <div className="galeria-header-actions">
+              <button
+                className="galeria-action-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void baixarFoto(fotoExpandida);
+                }}
+                aria-label="Baixar foto"
+              >
+                Baixar
+              </button>
+              <button
+                className="galeria-close-btn"
+                onClick={fecharExpandida}
+                aria-label="Fechar"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           <div className="galeria-fullscreen-content" onClick={(e) => e.stopPropagation()}>

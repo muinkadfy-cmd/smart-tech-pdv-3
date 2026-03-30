@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { showToast } from '@/components/ui/ToastContainer';
 import { getPessoas, criarPessoa } from '@/lib/pessoas';
 import { criarUsado, getUsadosEmEstoque, deletarUsado } from '@/lib/usados';
-import { uploadPhoto, uploadDocument, openFileInNewTab, getUsadoStorageLabel, isLocalUsadosBucket } from '@/lib/usados-uploads';
+import { uploadPhoto, uploadDocument, openFileInNewTab, getUsadoStorageLabel, isLocalUsadosBucket, saveFileToDevice } from '@/lib/usados-uploads';
 import { pessoasRepo, usadosArquivosRepo, usadosRepo } from '@/lib/repositories';
 import { getPrimeiraFoto, gerarUrlFoto } from '@/lib/usados-fotos';
 import type { Pessoa, Usado, UsadoArquivo } from '@/types';
@@ -802,6 +802,13 @@ function CompraUsadosPage() {
                     disabled={saving || (!online && a.bucket !== '__local__')}
                   >
                     Abrir
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    onClick={() => void saveFileToDevice(a.bucket, a.path, a.originalName || undefined)}
+                    disabled={saving || (!online && a.bucket !== '__local__')}
+                  >
+                    Baixar
                   </button>
                 </li>
               ))}

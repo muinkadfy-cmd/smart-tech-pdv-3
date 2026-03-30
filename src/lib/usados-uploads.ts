@@ -205,3 +205,24 @@ export async function openFileInNewTab(bucket: string, path: string): Promise<vo
   // Liberar URL depois de um tempo (evita vazamento de memória)
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
+
+export async function saveFileToDevice(
+  bucket: string,
+  path: string,
+  fileName?: string
+): Promise<void> {
+  const blob = await downloadFile(bucket, path);
+  const url = URL.createObjectURL(blob);
+
+  try {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName || path.split('/').pop() || 'arquivo';
+    link.rel = 'noopener';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+  }
+}
