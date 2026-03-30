@@ -237,7 +237,7 @@ export default function LoginPage() {
         setError(resetError.message || 'Não foi possível enviar o link de redefinição.');
         return;
       }
-      setOkMsg('Enviamos um link de redefinição para o seu e-mail. Abra o link para criar uma nova senha.');
+      setOkMsg('Enviamos um link de redefinicao para o seu e-mail. Abra o link para criar uma nova senha.');
     } catch (err: any) {
       setError(err?.message || 'Erro ao solicitar redefinição de senha.');
     }

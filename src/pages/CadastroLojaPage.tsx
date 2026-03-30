@@ -142,7 +142,7 @@ export default function CadastroLojaPage() {
             <p className="login-subtitle">
               {token
                 ? 'Conclua o acesso da sua conta com senha e store_id ja vinculados.'
-                : 'Cadastre a loja, ganhe 7 dias de teste, gere o store_id e guarde os dados de acesso.'}
+                : 'Cadastre a loja, ganhe 7 dias de teste, entre direto com e-mail, senha e store_id e guarde os dados de acesso.'}
             </p>
           </div>
 
@@ -229,7 +229,7 @@ export default function CadastroLojaPage() {
           ) : (
             <div className="login-form">
               <div className="login-success-box">
-                Cadastro criado com sucesso. Sua loja recebeu 7 dias de teste. Baixe o comprovante e guarde esses dados em local seguro.
+                Cadastro criado com sucesso. Sua loja recebeu 7 dias de teste e ja pode entrar direto no sistema. Baixe o comprovante e guarde esses dados em local seguro.
               </div>
 
               <div className="login-credential-grid">

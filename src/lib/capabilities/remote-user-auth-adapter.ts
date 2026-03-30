@@ -45,7 +45,7 @@ function mapSupabaseAuthMessage(
   }
 
   if (lower.includes('email not confirmed')) {
-    return 'Seu e-mail ainda nao foi confirmado. Abra sua caixa de entrada, clique no link de confirmacao do cadastro e depois tente entrar novamente.';
+    return 'Sua conta ainda nao foi liberada para entrar. Se a confirmacao por e-mail estiver desativada neste projeto, tente cadastrar novamente ou fale com o suporte.';
   }
 
   if (lower.includes('invalid login credentials')) {
