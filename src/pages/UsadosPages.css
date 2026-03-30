@@ -545,6 +545,17 @@
   margin-top: 0.5rem;
 }
 
+.usados-stock-file-row{
+  display:flex;
+  gap:0.5rem;
+  flex-wrap:wrap;
+}
+
+.usados-stock-inline-btn{
+  flex:1 1 140px;
+  min-height:40px;
+}
+
 .usados-action-button{
   flex: 1 1 140px;
 }

@@ -228,6 +228,24 @@ function CompraUsadosPage() {
     };
   }, [usados, docsCountByUsado, photosCountByUsado]);
 
+  const arquivosByUsado = useMemo(() => {
+    const map = new Map<string, { photos: UsadoArquivo[]; documents: UsadoArquivo[] }>();
+    for (const file of usadosArquivosRepo.list()) {
+      if (!file.usadoId) continue;
+      const current = map.get(file.usadoId) || { photos: [], documents: [] };
+      if (file.kind === 'photo') current.photos.push(file);
+      if (file.kind === 'document') current.documents.push(file);
+      map.set(file.usadoId, current);
+    }
+
+    for (const entry of map.values()) {
+      entry.photos.sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+      entry.documents.sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+    }
+
+    return map;
+  }, [usados, docsCountByUsado, photosCountByUsado]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [usados.length]);
@@ -825,7 +843,10 @@ function CompraUsadosPage() {
           <div className="usados-estoque-grid">
             {usadosPaginados.map((u) => {
               const numFotos = photosCountByUsado.get(u.id) || 0;
-                const numDocs = docsCountByUsado.get(u.id) || 0;
+              const numDocs = docsCountByUsado.get(u.id) || 0;
+              const arquivos = arquivosByUsado.get(u.id) || { photos: [], documents: [] };
+              const primeiraFotoArquivo = arquivos.photos[0];
+              const primeiroDocumentoArquivo = arquivos.documents[0];
               const miniatura = miniaturas.get(u.id);
               
               return (
@@ -865,6 +886,26 @@ function CompraUsadosPage() {
                         Fotos ({numFotos})
                       </button>
                     )}
+                    {primeiraFotoArquivo && (
+                      <div className="usados-stock-file-row">
+                        <button
+                          type="button"
+                          className="btn-secondary usados-stock-inline-btn"
+                          onClick={() => void openFileInNewTab(primeiraFotoArquivo.bucket, primeiraFotoArquivo.path)}
+                          disabled={saving || (!online && primeiraFotoArquivo.bucket !== '__local__')}
+                        >
+                          Preview foto
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-secondary usados-stock-inline-btn"
+                          onClick={() => void saveFileToDevice(primeiraFotoArquivo.bucket, primeiraFotoArquivo.path, primeiraFotoArquivo.originalName || undefined)}
+                          disabled={saving || (!online && primeiraFotoArquivo.bucket !== '__local__')}
+                        >
+                          Baixar foto
+                        </button>
+                      </div>
+                    )}
                     {numDocs > 0 && (
                       <button
                         type="button"
@@ -873,6 +914,26 @@ function CompraUsadosPage() {
                       >
                         Documentos ({numDocs})
                       </button>
+                    )}
+                    {primeiroDocumentoArquivo && (
+                      <div className="usados-stock-file-row">
+                        <button
+                          type="button"
+                          className="btn-secondary usados-stock-inline-btn"
+                          onClick={() => void openFileInNewTab(primeiroDocumentoArquivo.bucket, primeiroDocumentoArquivo.path)}
+                          disabled={saving || (!online && primeiroDocumentoArquivo.bucket !== '__local__')}
+                        >
+                          Preview doc
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-secondary usados-stock-inline-btn"
+                          onClick={() => void saveFileToDevice(primeiroDocumentoArquivo.bucket, primeiroDocumentoArquivo.path, primeiroDocumentoArquivo.originalName || undefined)}
+                          disabled={saving || (!online && primeiroDocumentoArquivo.bucket !== '__local__')}
+                        >
+                          Baixar doc
+                        </button>
+                      </div>
                     )}
 
                     
