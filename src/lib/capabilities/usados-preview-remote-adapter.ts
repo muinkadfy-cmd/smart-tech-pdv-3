@@ -1,4 +1,5 @@
 import { ensureSupabaseAuthenticated, getSupabaseClient, isSupabaseConfigured } from '@/lib/supabaseClient';
+import { downloadRemoteUsadoFile } from '@/lib/capabilities/usados-upload-remote-adapter';
 
 export async function resolveRemoteUsadoPreviewUrl(
   bucket: string,
@@ -16,6 +17,10 @@ export async function resolveRemoteUsadoPreviewUrl(
   const { data, error } = await client.storage.from(bucket).createSignedUrl(path, expiresInSeconds);
   if (!error && data?.signedUrl) return data.signedUrl;
 
-  const { data: pub } = client.storage.from(bucket).getPublicUrl(path);
-  return pub?.publicUrl || null;
+  const downloaded = await downloadRemoteUsadoFile(bucket, path);
+  if (downloaded.data) {
+    return URL.createObjectURL(downloaded.data);
+  }
+
+  return null;
 }

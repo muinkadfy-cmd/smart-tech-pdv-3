@@ -85,14 +85,15 @@ export async function gerarUrlsFotos(arquivos: UsadoArquivo[]): Promise<Map<stri
 /**
  * Busca fotos com URLs já geradas
  */
-export async function getFotosComUrls(usadoId: string): Promise<Array<{ arquivo: UsadoArquivo; url: string }>> {
+export async function getFotosComUrls(usadoId: string): Promise<Array<{ arquivo: UsadoArquivo; url: string; isObjectUrl?: boolean }>> {
   const fotos = getFotosUsado(usadoId);
   const urlMap = await gerarUrlsFotos(fotos);
   
   return fotos
     .map(foto => ({
       arquivo: foto,
-      url: urlMap.get(foto.id) || ''
+      url: urlMap.get(foto.id) || '',
+      isObjectUrl: (urlMap.get(foto.id) || '').startsWith('blob:')
     }))
     .filter(item => item.url); // Apenas fotos com URL válida
 }

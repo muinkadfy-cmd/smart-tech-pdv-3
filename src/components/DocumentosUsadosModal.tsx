@@ -44,7 +44,7 @@ async function resolveDocUrl(arquivo: UsadoArquivo): Promise<{ url: string; isOb
   // ✅ Online (Supabase): usar signed URL (não baixa tudo)
   const url = await signedUrl(arquivo.bucket, arquivo.path);
   if (!url) return null;
-  return { url };
+  return { url, isObjectUrl: url.startsWith('blob:') };
 }
 
 export default function DocumentosUsadosModal({ usadoId, titulo, isOpen, onClose }: Props) {

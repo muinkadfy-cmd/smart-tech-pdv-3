@@ -212,17 +212,57 @@ export async function saveFileToDevice(
   fileName?: string
 ): Promise<void> {
   const blob = await downloadFile(bucket, path);
-  const url = URL.createObjectURL(blob);
+  const resolvedName = fileName || path.split('/').pop() || 'arquivo';
+  let downloaded = false;
 
   try {
+    // Em mobile, o compartilhamento nativo costuma ser mais confiável que download por <a>.
+    const shareCtor = (globalThis as any).File;
+    const canShareFiles =
+      typeof navigator !== 'undefined' &&
+      typeof navigator.share === 'function' &&
+      typeof (navigator as any).canShare === 'function' &&
+      typeof shareCtor === 'function';
+
+    if (canShareFiles) {
+      const shareFile = new shareCtor([blob], resolvedName, {
+        type: blob.type || 'application/octet-stream'
+      });
+
+      if ((navigator as any).canShare({ files: [shareFile] })) {
+        await navigator.share({
+          files: [shareFile],
+          title: resolvedName,
+          text: resolvedName
+        });
+        downloaded = true;
+        return;
+      }
+    }
+
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = fileName || path.split('/').pop() || 'arquivo';
+    link.download = resolvedName;
     link.rel = 'noopener';
+    link.target = '_blank';
     document.body.appendChild(link);
     link.click();
     link.remove();
-  } finally {
+    downloaded = true;
     setTimeout(() => URL.revokeObjectURL(url), 30_000);
+  } finally {
+    if (!downloaded) {
+      // Se o navegador ignorar o atributo download, ainda abrimos o arquivo para não "sumir" ao usuário.
+      try {
+        const fallbackUrl = URL.createObjectURL(blob);
+        setTimeout(() => {
+          void openExternalUrlByPlatform(fallbackUrl);
+          setTimeout(() => URL.revokeObjectURL(fallbackUrl), 60_000);
+        }, 250);
+      } catch {
+        // ignore
+      }
+    }
   }
 }

@@ -15,6 +15,7 @@ interface GaleriaUsadosProps {
 interface FotoComUrl {
   arquivo: UsadoArquivo;
   url: string;
+  isObjectUrl?: boolean;
 }
 
 function GaleriaUsados({ usadoId, titulo, isOpen, onClose }: GaleriaUsadosProps) {
@@ -25,6 +26,11 @@ function GaleriaUsados({ usadoId, titulo, isOpen, onClose }: GaleriaUsadosProps)
 
   useEffect(() => {
     if (!isOpen) {
+      for (const foto of fotos) {
+        if (foto.isObjectUrl) {
+          URL.revokeObjectURL(foto.url);
+        }
+      }
       setFotos([]);
       setFotoExpandida(null);
       setLoading(true);
@@ -37,6 +43,11 @@ function GaleriaUsados({ usadoId, titulo, isOpen, onClose }: GaleriaUsadosProps)
   const carregarFotos = async () => {
     setLoading(true);
     try {
+      for (const foto of fotos) {
+        if (foto.isObjectUrl) {
+          URL.revokeObjectURL(foto.url);
+        }
+      }
       const fotosComUrls = await getFotosComUrls(usadoId);
       setFotos(fotosComUrls);
     } catch (error) {
@@ -72,6 +83,16 @@ function GaleriaUsados({ usadoId, titulo, isOpen, onClose }: GaleriaUsadosProps)
   const baixarFoto = async (foto: FotoComUrl) => {
     await saveFileToDevice(foto.arquivo.bucket, foto.arquivo.path, foto.arquivo.originalName || undefined);
   };
+
+  useEffect(() => {
+    return () => {
+      for (const foto of fotos) {
+        if (foto.isObjectUrl) {
+          URL.revokeObjectURL(foto.url);
+        }
+      }
+    };
+  }, [fotos]);
 
   // Navegação por teclado
   useEffect(() => {
