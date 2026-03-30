@@ -434,6 +434,14 @@ export async function login(username: string, password: string, storeIdOverride?
     }
   }
 
+  if (ENV.hasSupabase && user.includes('@') && !remoteAvailable) {
+    recordLoginFailure(user, storeIdForThrottle);
+    return {
+      success: false,
+      error: 'Nao foi possivel acessar o login remoto do Supabase neste dispositivo. Se estiver no celular ou PWA, atualize o app, limpe o cache do site e tente novamente.',
+    };
+  }
+
   if (!ENV.hasSupabase && superAdminRecord && normalizeUserEmail(superAdminRecord.email || superAdminRecord.username) === normalizeUserEmail(user)) {
     if (!superAdminRecord.active) {
       recordLoginFailure(user, storeIdForThrottle);
@@ -476,7 +484,12 @@ export async function login(username: string, password: string, storeIdOverride?
 
   if (!record) {
     recordLoginFailure(user, storeIdForThrottle);
-    return { success: false, error: 'Cadastro nao encontrado para este e-mail e store_id.' };
+    return {
+      success: false,
+      error: ENV.hasSupabase
+        ? 'Nao encontramos este acesso neste dispositivo. Se a conta funciona no PC, o celular pode estar com cache antigo. Atualize o app, limpe o cache do site e tente novamente.'
+        : 'Cadastro nao encontrado para este e-mail e store_id.',
+    };
   }
 
   if (!record.active) {
