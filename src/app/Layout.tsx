@@ -7,11 +7,12 @@ import DrawerMenu from '@/components/layout/DrawerMenu';
 import { ClientIdGuard } from '@/components/ClientIdGuard';
 import AuthGuard from '@/components/AuthGuard';
 import { CompanyProvider } from '@/contexts/CompanyContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { UpdateProvider } from '@/contexts/UpdateContext';
 import UpdateBanner from '@/components/updates/UpdateBanner';
 import { QuickActionsBar } from '@/components/quick-actions/QuickActionsBar';
 import ToastContainer from '@/components/ui/ToastContainer';
-import { stopSyncEngine } from '@/lib/repository/sync-engine';
+import { startSyncEngine, stopSyncEngine } from '@/lib/repository/sync-engine';
 import { APP_EVENTS } from '@/lib/app-events';
 import { perfMarkOnce, perfMeasure } from '@/lib/perf';
 import { preloadForPathname } from '@/lib/route-preload';
@@ -200,6 +201,7 @@ function OutletBoundary({ children }: { children: ReactNode }) {
 
 function Layout() {
   const location = useLocation();
+  const { session } = useAuth();
   const privateShellMarkedRef = useRef(false);
   const isPublicRoute =
     location.pathname === "/" ||
@@ -262,14 +264,18 @@ function Layout() {
       // ignore
     }
   }, [isPublicRoute]);
-  // ✅ OFFLINE TOTAL: não inicia SyncEngine nem qualquer fluxo online
+  // ✅ Web/PWA autenticado: inicia sync automático.
+  // Desktop/local-only continuam protegidos dentro do wrapper do sync-engine.
   useEffect(() => {
-    // segurança: garante que qualquer engine antiga esteja parada
-    try { stopSyncEngine(); } catch {}
+    if (!isPublicRoute && session) {
+      try { startSyncEngine(30000); } catch {}
+    } else {
+      try { stopSyncEngine(); } catch {}
+    }
     return () => {
       try { stopSyncEngine(); } catch {}
     };
-  }, [isPublicRoute]);
+  }, [isPublicRoute, session]);
 
 
   // ✅ Low-end flag reativo (para cortar UI extra em PC fraco)

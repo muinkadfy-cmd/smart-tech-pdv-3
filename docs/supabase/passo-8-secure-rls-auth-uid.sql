@@ -162,6 +162,12 @@ security definer
 set search_path = public
 as $$
 begin
+  -- Permitir operações internas disparadas por outros triggers
+  -- (ex.: bootstrap_auth_user após signup no auth.users).
+  if pg_trigger_depth() > 1 then
+    return case when tg_op = 'DELETE' then old else new end;
+  end if;
+
   if public.current_user_is_superadmin() then
     return case when tg_op = 'DELETE' then old else new end;
   end if;
@@ -646,4 +652,5 @@ using (
     or (storage.foldername(name))[1] = public.current_user_store_id_text()
   )
 );
+
 

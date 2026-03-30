@@ -4,6 +4,8 @@
  */
 
 import { logger } from '@/utils/logger';
+import { addToOutbox } from './repository/outbox';
+import { isLocalOnly } from './mode';
 import { getClientId, getStoragePrefix } from './tenant';
 import { safeRemove, safeSet } from './storage';
 import { 
@@ -885,6 +887,21 @@ async function restoreCollection<T>(
   stats[statsKey] = await repo.restoreMany(items);
 }
 
+function queueRestoredCollectionForSync(
+  table: string,
+  items: any[] | undefined,
+  transform?: (item: any) => any
+): void {
+  if (isLocalOnly()) return;
+  if (!Array.isArray(items) || items.length === 0) return;
+
+  for (const item of items) {
+    if (!item || typeof item.id !== 'string' || !item.id) continue;
+    const payload = transform ? transform(item) : item;
+    addToOutbox(table, 'upsert', payload as Record<string, any>, item.id);
+  }
+}
+
 function buildRestoreDatasetEntries(backup: BackupData): RestoreDatasetEntry[] {
   return [
     { statsKey: 'clientes', storageKey: 'customers', items: backup.data.clientes || [] },
@@ -1002,7 +1019,9 @@ async function applyBackupPayload(
   } else {
     await restoreCollection(clientesRepo, backup.data.clientes, stats, 'clientes');
     await restoreCollection(produtosRepo, backup.data.produtos, stats, 'produtos');
-    await restoreCollection(vendasRepo, backup.data.vendas, stats, 'vendas');
+    if (isDesktopApp()) {
+      await restoreCollection(vendasRepo, backup.data.vendas, stats, 'vendas');
+    }
     await restoreCollection(ordensRepo, backup.data.ordens, stats, 'ordens');
     await restoreCollection(financeiroRepo, backup.data.financeiro, stats, 'financeiro');
     await restoreCollection(cobrancasRepo, backup.data.cobrancas, stats, 'cobrancas');
@@ -1017,6 +1036,42 @@ async function applyBackupPayload(
     await restoreCollection(usadosArquivosRepo, backup.data.usadosArquivos, stats, 'usadosArquivos');
     await restoreCollection(fornecedoresRepo, backup.data.fornecedores, stats, 'fornecedores');
     await restoreCollection(taxasPagamentoRepo, backup.data.taxasPagamento, stats, 'taxasPagamento');
+  }
+
+  // Em Web/PWA, o restore é local primeiro. Para refletir em outros dispositivos,
+  // enfileiramos os registros restaurados para sincronização com o Supabase.
+  if (!isDesktopApp()) {
+    queueRestoredCollectionForSync('clientes', backup.data.clientes);
+    queueRestoredCollectionForSync('produtos', backup.data.produtos);
+    queueRestoredCollectionForSync('ordens_servico', backup.data.ordens);
+    queueRestoredCollectionForSync('financeiro', backup.data.financeiro);
+    queueRestoredCollectionForSync('cobrancas', backup.data.cobrancas);
+    queueRestoredCollectionForSync('devolucoes', backup.data.devolucoes);
+    queueRestoredCollectionForSync('encomendas', backup.data.encomendas);
+    queueRestoredCollectionForSync('recibos', backup.data.recibos);
+    queueRestoredCollectionForSync('codigos', backup.data.codigos);
+    queueRestoredCollectionForSync('settings', backup.data.settings);
+    queueRestoredCollectionForSync('pessoas', backup.data.pessoas);
+    queueRestoredCollectionForSync('usados', backup.data.usados);
+    queueRestoredCollectionForSync('usados_vendas', backup.data.usadosVendas);
+    queueRestoredCollectionForSync('usados_arquivos', backup.data.usadosArquivos);
+    queueRestoredCollectionForSync('fornecedores', backup.data.fornecedores);
+    queueRestoredCollectionForSync('taxas_pagamento', backup.data.taxasPagamento);
+
+    // Vendas usam fluxo especial fora da outbox.
+    // Marcar como pending força o sync engine a revalidar/enviar essas vendas.
+    if (Array.isArray(backup.data.vendas)) {
+      await restoreCollection(
+        vendasRepo,
+        backup.data.vendas.map((item: any) => ({
+          ...item,
+          sync_status: 'pending',
+          sync_error: undefined,
+        })),
+        stats,
+        'vendas'
+      );
+    }
   }
 
   if (backup.data.usadosFiles && Array.isArray(backup.data.usadosFiles)) {
