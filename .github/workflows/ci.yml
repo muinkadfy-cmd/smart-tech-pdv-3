@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Validate (type-check + build)
+        run: npm run validate
+      - name: Unit tests
+        run: npm run test:unit
+
+# Para habilitar E2E no CI:
+# - Requer instalar browsers do Playwright e rodar `npm run test:e2e`.
+# - Recomenda-se só ligar depois que o projeto estiver estável no seu PC.

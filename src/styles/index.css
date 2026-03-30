@@ -1,0 +1,25 @@
+/* src/styles/index.css */
+/* Ordem pensada: tokens -> tema -> layout -> componentes -> forms -> extras */
+
+@import "./tokens.css";
+@import "./theme.css";
+@import "./layout.css";
+
+@import "./components.css";
+@import "./forms.css";
+@import "./buttons.css";
+@import "./polish.css";
+
+@import "./mobile.css";
+@import "./web.css";
+@import "./accessibility.css";
+
+@import "./skeleton.css";
+@import "./spinners.css";
+@import "./empty-states.css";
+
+@import "./dark-mode-mobile-fix.css";
+
+/* Tema clássico (Desktop) */
+/* @import "./theme-classic.css";  (desativado: dark fixo) */
+/* @import "./classic-ui.css";  (desativado: dark fixo) */
