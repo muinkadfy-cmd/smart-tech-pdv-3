@@ -18,6 +18,11 @@ import { kvGet, kvRemove, kvSet } from '@/lib/desktop-kv';
 import { isDesktopApp } from '@/lib/platform';
 import { getRuntimeStoreId } from '@/lib/runtime-context';
 import {
+  canUseCompanyRemote,
+  deleteRemoteCompanyByStoreId,
+  upsertRemoteCompanyByStoreId,
+} from '@/lib/capabilities/company-remote-adapter';
+import {
   initCompanyLock,
   getCompanyLockState,
   isCompanyLockedSync,
@@ -105,6 +110,7 @@ function toCache(row: CompanyRow) {
     endereco: row.endereco || undefined,
     cidade: row.cidade || undefined,
     estado: row.estado || undefined,
+    logo_url: row.logo_url || undefined,
     slogan: row.mensagem_rodape || undefined,
   };
 }
@@ -196,12 +202,54 @@ export async function upsertCompany(input: CompanyUpsertInput): Promise<{
     mensagem_rodape: trimOrNull(input.mensagem_rodape) ?? undefined,
   };
 
-  saveLocal(row);
+  const canUseRemote = await canUseCompanyRemote();
+  let finalRow = row;
+
+  if (canUseRemote) {
+    const remote = await upsertRemoteCompanyByStoreId(scopeId, {
+      nome_fantasia: row.nome_fantasia,
+      razao_social: row.razao_social,
+      cnpj: row.cnpj,
+      telefone: row.telefone,
+      endereco: row.endereco,
+      cidade: row.cidade,
+      estado: row.estado,
+      cep: row.cep,
+      logo_url: row.logo_url,
+      mensagem_rodape: row.mensagem_rodape,
+    });
+
+    if (remote.error) {
+      logger.error('[CompanyService] Falha ao persistir empresa no remoto:', remote.error);
+      return { success: false, error: remote.error?.message || 'Falha ao salvar empresa no Supabase.' };
+    }
+
+    if (remote.data) {
+      finalRow = {
+        id: remote.data.id,
+        store_id: remote.data.store_id,
+        nome_fantasia: remote.data.nome_fantasia,
+        razao_social: remote.data.razao_social,
+        cnpj: remote.data.cnpj,
+        telefone: remote.data.telefone,
+        endereco: remote.data.endereco,
+        cidade: remote.data.cidade,
+        estado: remote.data.estado,
+        cep: remote.data.cep,
+        logo_url: remote.data.logo_url ?? undefined,
+        mensagem_rodape: remote.data.mensagem_rodape ?? undefined,
+        created_at: remote.data.created_at,
+        updated_at: remote.data.updated_at,
+      };
+    }
+  }
+
+  saveLocal(finalRow);
 
   // ✅ Desktop: persistir também no KV (SQLite global) para sobreviver a updates/reinstalação
   if (isDesktopApp()) {
     try {
-      await kvSet(companyKvKey(scopeId), JSON.stringify(row));
+      await kvSet(companyKvKey(scopeId), JSON.stringify(finalRow));
     } catch (error) {
       logger.error('[CompanyService] Falha ao persistir empresa no KV desktop:', error);
       if (prev) saveLocal(prev);
@@ -212,7 +260,7 @@ export async function upsertCompany(input: CompanyUpsertInput): Promise<{
       return { success: false, error: 'Falha ao persistir dados da empresa no banco local do desktop.' };
     }
   }
-  return { success: true, company: row };
+  return { success: true, company: finalRow };
 }
 
 /**
@@ -224,6 +272,15 @@ export async function deleteCompany(): Promise<{ success: boolean; error?: strin
 
   const existing = safeGet<CompanyRow>(COMPANY_LOCAL_KEY, null);
   const prev = (existing?.success ? (existing.data as any) : null) as CompanyRow | null;
+
+  const canUseRemote = await canUseCompanyRemote();
+  if (canUseRemote) {
+    const remote = await deleteRemoteCompanyByStoreId(scopeId);
+    if (remote.error) {
+      logger.error('[CompanyService] Falha ao remover empresa no remoto:', remote.error);
+      return { success: false, error: remote.error?.message || 'Falha ao remover empresa do Supabase.' };
+    }
+  }
 
   safeRemove(COMPANY_LOCAL_KEY);
   safeRemove(COMPANY_CACHE_KEY);
