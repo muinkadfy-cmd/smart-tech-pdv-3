@@ -200,24 +200,6 @@
 @media (max-width: 420px) {
   .logo-image { width: 32px; height: 32px; border-radius: 10px; }
   .logo-fallback { width: 32px; height: 32px; border-radius: 10px; }
-.topbar-clock {
-    min-width: auto;
-    padding: 4px 8px;
-    margin-right: 0;
-    border-radius: 12px;
-  }
-
-  .clock-date {
-    /* Em telas bem pequenas, ainda exibir a data, por00E9m menor */
-    display: block;
-    font-size: 10px;
-    opacity: 0.8;
-    line-height: 1.1;
-  }
-
-  .clock-time {
-    font-size: 12px;
-  }
 }
 
 .logo-text {
@@ -316,10 +298,28 @@ body:root[data-theme="dark"] .topbar-clock {
 
 /* Mobile: compacta e centraliza */
 @media (max-width: 640px) {
+  .topbar {
+    min-height: 58px;
+    padding: 8px 12px;
+    padding-top: calc(8px + env(safe-area-inset-top));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  .topbar-left {
+    gap: 10px;
+  }
+
+  .topbar-right {
+    gap: 8px;
+  }
+
   .topbar-clock {
     padding: 6px 10px;
     min-width: 0;
     align-items: center;
+    margin-right: 0;
+    border-radius: 12px;
   }
 
   .clock-time {
@@ -332,11 +332,35 @@ body:root[data-theme="dark"] .topbar-clock {
 }
 
 @media (max-width: 420px) {
+  .topbar {
+    min-height: 54px;
+    padding: 6px 10px;
+    padding-top: calc(6px + env(safe-area-inset-top));
+    padding-left: max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
+  }
+
+  .topbar-left {
+    gap: 8px;
+  }
+
+  .topbar-right {
+    gap: 6px;
+  }
+
   .clock-date {
     display: block;
     font-size: 10px;
     opacity: 0.8;
     line-height: 1.1;
+  }
+
+  .clock-time {
+    font-size: 12px;
+  }
+
+  .topbar-clock {
+    padding: 4px 8px;
   }
 }
 

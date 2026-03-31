@@ -12,6 +12,8 @@ function BottomNav({ onOpenMenu }: BottomNavProps) {
       <nav className="bottom-nav">
         <NavLink
           to="/painel"
+          aria-label="Painel"
+          title="Painel"
           className={({ isActive }) =>
             `bottom-nav-item ${isActive ? 'active' : ''}`
           }
@@ -21,6 +23,8 @@ function BottomNav({ onOpenMenu }: BottomNavProps) {
         </NavLink>
         <NavLink
           to="/vendas"
+          aria-label="Vendas"
+          title="Vendas"
           className={({ isActive }) =>
             `bottom-nav-item ${isActive ? 'active' : ''}`
           }
@@ -30,6 +34,8 @@ function BottomNav({ onOpenMenu }: BottomNavProps) {
         </NavLink>
         <NavLink
           to="/ordens"
+          aria-label="Ordens de serviço"
+          title="Ordens de serviço"
           className={({ isActive }) =>
             `bottom-nav-item ${isActive ? 'active' : ''}`
           }
@@ -39,6 +45,8 @@ function BottomNav({ onOpenMenu }: BottomNavProps) {
         </NavLink>
         <NavLink
           to="/financeiro"
+          aria-label="Financeiro"
+          title="Financeiro"
           className={({ isActive }) =>
             `bottom-nav-item ${isActive ? 'active' : ''}`
           }
