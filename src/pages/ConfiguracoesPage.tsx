@@ -40,6 +40,49 @@ function normalizeTamanhoPapel(raw: unknown): TamanhoPapel | null {
 
   return null;
 }
+
+async function fileToDataUrl(file: File): Promise<string> {
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') resolve(reader.result);
+      else reject(new Error('Falha ao ler arquivo da logo.'));
+    };
+    reader.onerror = () => reject(new Error('Falha ao ler arquivo da logo.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function loadImage(src: string): Promise<HTMLImageElement> {
+  return await new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Nao foi possivel processar a logo.'));
+    img.src = src;
+  });
+}
+
+async function normalizeLogoImage(file: File): Promise<string> {
+  const raw = await fileToDataUrl(file);
+  const image = await loadImage(raw);
+
+  const maxWidth = 960;
+  const maxHeight = 320;
+  const ratio = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
+  const width = Math.max(1, Math.round(image.width * ratio));
+  const height = Math.max(1, Math.round(image.height * ratio));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Nao foi possivel preparar a logo para impressao.');
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(image, 0, 0, width, height);
+  return canvas.toDataURL('image/png');
+}
+
 const STORAGE_KEY_PAPEL = 'smart-tech-tamanho-papel';
 const STORAGE_KEY_PRINT_SCALE = 'smart-tech-print-scale';
 const CONFIG_TABS = [
@@ -70,6 +113,7 @@ function ConfiguracoesPage() {
   const [companyFormDirty, setCompanyFormDirty] = useState(false);
   const [companySaving, setCompanySaving] = useState(false);
   const [showCompanyAdvanced, setShowCompanyAdvanced] = useState(false);
+  const [logoFileName, setLogoFileName] = useState('');
   const [mensagem, setMensagem] = useState('');
   const [tamanhoPapel, setTamanhoPapel] = useState<TamanhoPapel>(desktopSuggestedDefault);
   const [printScale, setPrintScale] = useState<number>(1);
@@ -89,6 +133,7 @@ function ConfiguracoesPage() {
   const [showPersistenceDiagnostics, setShowPersistenceDiagnostics] = useState(false);
   const runtimeRefreshTimerRef = useRef<number | null>(null);
   const lastCompanyVersionRef = useRef('');
+  const logoFileRef = useRef<HTMLInputElement | null>(null);
 
   const loadPersistenceInfo = useCallback(async () => {
     if (!isDesktopApp()) return;
@@ -216,12 +261,36 @@ function ConfiguracoesPage() {
       logo_url: company.logo_url || '',
       mensagem_rodape: company.mensagem_rodape || ''
     });
+    setLogoFileName('');
   }, [company, companyFormDirty]);
 
   const updateCompanyFormField = useCallback((field: keyof typeof companyForm, value: string) => {
     setCompanyForm((prev) => ({ ...prev, [field]: value }));
     setCompanyFormDirty(true);
   }, []);
+
+  const handleLogoFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const normalizedLogo = await normalizeLogoImage(file);
+      updateCompanyFormField('logo_url', normalizedLogo);
+      setLogoFileName(file.name);
+      showToast('Logo pronta para salvar. Ela sera ajustada automaticamente na impressao.', 'success');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Nao foi possivel preparar a logo.';
+      showToast(message, 'error');
+    } finally {
+      event.target.value = '';
+    }
+  };
+
+  const clearCompanyLogo = () => {
+    updateCompanyFormField('logo_url', '');
+    setLogoFileName('');
+    if (logoFileRef.current) logoFileRef.current.value = '';
+  };
 
   const handleSaveCompany = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -285,6 +354,7 @@ function ConfiguracoesPage() {
           mensagem_rodape: ''
         });
         setCompanyFormDirty(false);
+        setLogoFileName('');
       } else {
         showToast(result.error || 'Erro ao remover empresa', 'error');
       }
@@ -495,7 +565,57 @@ function ConfiguracoesPage() {
                 {showCompanyAdvanced && (
                   <>
                     <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                      <label>Logo URL (opcional)</label>
+                      <label>Logo da empresa (opcional)</label>
+                      <div className="company-logo-upload">
+                        <input
+                          ref={logoFileRef}
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                          onChange={(e) => void handleLogoFileChange(e)}
+                          disabled={companySaving}
+                          className="company-logo-upload__input"
+                        />
+
+                        <div className="company-logo-upload__actions">
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() => logoFileRef.current?.click()}
+                            disabled={companySaving}
+                          >
+                            Escolher logo
+                          </button>
+
+                          {companyForm.logo_url && (
+                            <button
+                              type="button"
+                              className="btn-secondary"
+                              onClick={clearCompanyLogo}
+                              disabled={companySaving}
+                            >
+                              Remover logo
+                            </button>
+                          )}
+                        </div>
+
+                        <span className="company-logo-upload__file-name">
+                          {logoFileName || (companyForm.logo_url ? 'Logo pronta para salvar.' : 'PNG, JPG, WEBP ou SVG. Ajuste automatico para impressao.')}
+                        </span>
+
+                        <div className="company-logo-upload__preview">
+                          {companyForm.logo_url ? (
+                            <img src={companyForm.logo_url} alt="Preview da logo da empresa" />
+                          ) : (
+                            <div className="company-logo-upload__empty">
+                              A logo sera ajustada automaticamente para A4, 80mm e 58mm.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                      <label>Logo URL (opcional, avancado)</label>
                       <input
                         type="url"
                         value={companyForm.logo_url}

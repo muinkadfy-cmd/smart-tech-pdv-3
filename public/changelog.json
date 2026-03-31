@@ -1,10 +1,16 @@
 {
-  "version": "2.0.42.20260331150149",
-  "build": "2026-03-31T15:01:49.834Z",
-  "commit": "fdf84a6",
+  "version": "2.0.42.20260331153348",
+  "build": "2026-03-31T15:33:48.545Z",
+  "commit": "58dc8a8",
   "limit": 80,
   "sections": {
     "Outros": [
+      {
+        "hash": "58dc8a8",
+        "date": "2026-03-31T12:03:31-03:00",
+        "type": "other",
+        "text": "remove company lock flow and simplify usados stock actions"
+      },
       {
         "hash": "fdf84a6",
         "date": "2026-03-31T10:45:46-03:00",
@@ -67,5 +73,5 @@
       }
     ]
   },
-  "generated_at": "2026-03-31T15:01:49.834Z"
+  "generated_at": "2026-03-31T15:33:48.545Z"
 }
