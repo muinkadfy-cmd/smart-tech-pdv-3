@@ -19,8 +19,7 @@ import {showToast} from '@/components/ui/ToastContainer';
 import {clearStoreData, removeOrphanedData, removeTestData} from '@/lib/store-cleanup';
 import {isAdminMode} from '@/lib/adminMode';
 import {useCompany} from '@/contexts/CompanyContext';
-import {deleteCompany, upsertCompany, isCompanyLocked, lockCompany} from '@/lib/company-service';
-import {initCompanyLock, getCompanyLockState, type CompanyLockState} from '@/lib/company-lock';
+import {deleteCompany, upsertCompany} from '@/lib/company-service';
 // Taxas removidas - usar aba "Simular Taxas" para configuração
 import { getRuntimeStoreId } from '@/lib/runtime-context';
 import { getPersistenceInfo, type PersistenceInfo } from '@/lib/persistence-info';
@@ -68,12 +67,9 @@ function ConfiguracoesPage() {
     logo_url: '',
     mensagem_rodape: ''
   });
+  const [companyFormDirty, setCompanyFormDirty] = useState(false);
   const [companySaving, setCompanySaving] = useState(false);
   const [showCompanyAdvanced, setShowCompanyAdvanced] = useState(false);
-  const [lockState, setLockState] = useState<CompanyLockState>(() => getCompanyLockState());
-  const companyLocked = lockState.locked;
-  const [showLockModal, setShowLockModal] = useState(false);
-  const [locking, setLocking] = useState(false);
   const [mensagem, setMensagem] = useState('');
   const [tamanhoPapel, setTamanhoPapel] = useState<TamanhoPapel>(desktopSuggestedDefault);
   const [printScale, setPrintScale] = useState<number>(1);
@@ -92,6 +88,7 @@ function ConfiguracoesPage() {
   const [showPrinterAdvanced, setShowPrinterAdvanced] = useState(false);
   const [showPersistenceDiagnostics, setShowPersistenceDiagnostics] = useState(false);
   const runtimeRefreshTimerRef = useRef<number | null>(null);
+  const lastCompanyVersionRef = useRef('');
 
   const loadPersistenceInfo = useCallback(async () => {
     if (!isDesktopApp()) return;
@@ -164,11 +161,6 @@ function ConfiguracoesPage() {
       if (diagnosticsOn && showPersistenceDiagnostics) {
         void loadPersistenceInfo();
       }
-      initCompanyLock().then((state) => {
-        setLockState(state);
-      }).catch(() => {
-        setLockState({ locked: isCompanyLocked() });
-      });
       void refreshCompany();
     };
 
@@ -204,32 +196,32 @@ function ConfiguracoesPage() {
   }, [desktopSuggestedDefault, refreshCompany, diagnosticsOn, showPersistenceDiagnostics, loadPersistenceInfo]);
 
   useEffect(() => {
-    // Hidrata o lock do SQLite KV na memória (async — sobrevive a limpeza do WebView)
-    initCompanyLock().then((state) => {
-      setLockState(state);
-    }).catch(() => {
-      // fallback síncrono via localStorage
-      setLockState({ locked: isCompanyLocked() });
-    });
-  }, []); // executa apenas 1x — initCompanyLock é idempotente
-
-  useEffect(() => {
     // Carregar dados da empresa no form quando vierem do contexto
-    if (company) {
-      setCompanyForm({
-        nome_fantasia: company.nome_fantasia || '',
-        razao_social: company.razao_social || '',
-        cnpj: company.cnpj || '',
-        telefone: company.telefone || '',
-        endereco: company.endereco || '',
-        cidade: company.cidade || '',
-        estado: company.estado || '',
-        cep: company.cep || '',
-        logo_url: company.logo_url || '',
-        mensagem_rodape: company.mensagem_rodape || ''
-      });
-    }
-  }, [company]);
+    if (!company) return;
+
+    const version = company.updated_at || company.created_at || company.id || '';
+    if (companyFormDirty) return;
+    if (version === lastCompanyVersionRef.current) return;
+
+    lastCompanyVersionRef.current = version;
+    setCompanyForm({
+      nome_fantasia: company.nome_fantasia || '',
+      razao_social: company.razao_social || '',
+      cnpj: company.cnpj || '',
+      telefone: company.telefone || '',
+      endereco: company.endereco || '',
+      cidade: company.cidade || '',
+      estado: company.estado || '',
+      cep: company.cep || '',
+      logo_url: company.logo_url || '',
+      mensagem_rodape: company.mensagem_rodape || ''
+    });
+  }, [company, companyFormDirty]);
+
+  const updateCompanyFormField = useCallback((field: keyof typeof companyForm, value: string) => {
+    setCompanyForm((prev) => ({ ...prev, [field]: value }));
+    setCompanyFormDirty(true);
+  }, []);
 
   const handleSaveCompany = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,21 +231,10 @@ function ConfiguracoesPage() {
     }
     setCompanySaving(true);
     try {
-      // 🔒 Se empresa está fixada, envia apenas campos editáveis — campos críticos
-    // vêm do snapshot do lock (não do form, que pode ter sido adulterado via DevTools)
-    const upsertPayload = companyLocked && lockState.snapshot
-      ? {
-          nome_fantasia: lockState.snapshot.nome_fantasia,   // usa snapshot
-          razao_social: lockState.snapshot.razao_social || undefined,
-          cnpj: lockState.snapshot.cnpj || undefined,
-        }
-      : {
-          nome_fantasia: companyForm.nome_fantasia,
-          razao_social: companyForm.razao_social || undefined,
-          cnpj: companyForm.cnpj || undefined,
-        };
-    const result = await upsertCompany({
-        ...upsertPayload,
+      const result = await upsertCompany({
+        nome_fantasia: companyForm.nome_fantasia,
+        razao_social: companyForm.razao_social || undefined,
+        cnpj: companyForm.cnpj || undefined,
         telefone: companyForm.telefone || undefined,
         endereco: companyForm.endereco || undefined,
         cidade: companyForm.cidade || undefined,
@@ -263,6 +244,7 @@ function ConfiguracoesPage() {
         mensagem_rodape: companyForm.mensagem_rodape || undefined
       });
       if (result.success) {
+        setCompanyFormDirty(false);
         showToast('Dados da empresa salvos com sucesso!', 'success');
         await refreshCompany();
       } else {
@@ -270,44 +252,6 @@ function ConfiguracoesPage() {
       }
     } finally {
       setCompanySaving(false);
-    }
-  };
-
-
-  // ─── Fixar Empresa ────────────────────────────────────────────────────────────
-
-  const handleConfirmLock = async () => {
-    setLocking(true);
-    try {
-      // lockCompany() lê do storage — não do formulário (anti-tamper)
-      // Se o usuário alterou campos no form sem salvar, o lock usa os dados SALVOS.
-      const result = await lockCompany();
-      if (result.success) {
-        // Recarregar lock state da memória (já atualizado por lockCompany)
-        setLockState(getCompanyLockState());
-        setShowLockModal(false);
-        showToast('🔒 Empresa fixada. CNPJ e razão social não podem mais ser alterados.', 'success');
-      } else {
-        showToast(result.error || 'Erro ao fixar empresa.', 'error');
-      }
-    } finally {
-      setLocking(false);
-    }
-  };
-
-    const _handleLockCompany = async () => {
-    setLocking(true);
-    try {
-      const result = await lockCompany();
-      if (result.success) {
-        setLockState({ locked: true });
-        setShowLockModal(false);
-        showToast('🔒 Empresa fixada com sucesso. CNPJ e Razão Social não podem mais ser alterados.', 'success');
-      } else {
-        showToast(result.error || 'Erro ao fixar empresa.', 'error');
-      }
-    } finally {
-      setLocking(false);
     }
   };
 
@@ -340,6 +284,7 @@ function ConfiguracoesPage() {
           logo_url: '',
           mensagem_rodape: ''
         });
+        setCompanyFormDirty(false);
       } else {
         showToast(result.error || 'Erro ao remover empresa', 'error');
       }
@@ -442,108 +387,51 @@ function ConfiguracoesPage() {
           >
             <form onSubmit={handleSaveCompany}>
 
-              {/* ── Banner de estado do lock ─────────────────────────────── */}
-              {companyLocked ? (
-                <div style={{
-                  marginBottom: '0.75rem',
-                  padding: '12px 14px',
-                  borderRadius: 10,
-                  border: '1.5px solid rgba(16,185,129,0.35)',
-                  background: 'rgba(16,185,129,0.09)',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 10,
-                }}>
-                  <span style={{ fontSize: 20, lineHeight: 1 }}>🔒</span>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: '#10b981' }}>Empresa fixada</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2, lineHeight: 1.5 }}>
-                      CNPJ e Razão Social estão bloqueados permanentemente.<br />
-                      Telefone, endereço, logo e rodapé ainda podem ser editados.
-                    </div>
-                  </div>
-                </div>
-              ) : company && (
-                <div style={{
-                  marginBottom: '0.75rem',
-                  padding: '10px 12px',
-                  borderRadius: 10,
-                  border: '1px solid rgba(251,191,36,0.3)',
-                  background: 'rgba(251,191,36,0.07)',
-                  fontSize: 13,
-                  color: 'var(--text-secondary)',
-                }}>
-                  ⚠️ Antes de <b>fixar</b>, confira com atenção <b>Nome Fantasia</b>, <b>Razão Social</b> e <b>CNPJ</b>. Depois de fixado, esses campos ficam imutáveis. Para confirmar, será solicitado digitar <b>FIXAR</b>.
-                </div>
-              )}
-
               <div className="form-grid">
-
-                {/* ── CAMPOS CRÍTICOS (disabled quando locked) ───────────── */}
                 <div className="form-group">
-                  <label>
-                    Nome Fantasia *
-                    {companyLocked && (
-                      <span title="Campo fixado — não pode ser alterado" style={{ marginLeft: 6, cursor: 'help', opacity: 0.7 }}>🔒</span>
-                    )}
-                  </label>
+                  <label>Nome Fantasia *</label>
                   <input
                     type="text"
                     required
                     value={companyForm.nome_fantasia}
-                    onChange={(e) => setCompanyForm({ ...companyForm, nome_fantasia: e.target.value })}
+                    onChange={(e) => updateCompanyFormField('nome_fantasia', e.target.value)}
                     placeholder="Ex: Smart Tech"
                     autoFocus={false}
-                    disabled={companyLocked || companySaving || companyLoading}
-                    title={companyLocked ? '🔒 Campo fixado — não pode ser alterado' : undefined}
+                    disabled={companySaving}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label>
-                    Razão Social
-                    {companyLocked && (
-                      <span title="Campo fixado — não pode ser alterado" style={{ marginLeft: 6, cursor: 'help', opacity: 0.7 }}>🔒</span>
-                    )}
-                  </label>
+                  <label>Razão Social</label>
                   <input
                     type="text"
                     value={companyForm.razao_social}
-                    onChange={(e) => setCompanyForm({ ...companyForm, razao_social: e.target.value })}
+                    onChange={(e) => updateCompanyFormField('razao_social', e.target.value)}
                     placeholder="Ex: Smart Tech Assistência Técnica LTDA"
-                    disabled={companyLocked || companySaving || companyLoading}
-                    title={companyLocked ? '🔒 Campo fixado — não pode ser alterado' : undefined}
+                    disabled={companySaving}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label>
-                    CNPJ
-                    {companyLocked && (
-                      <span title="Campo fixado — não pode ser alterado" style={{ marginLeft: 6, cursor: 'help', opacity: 0.7 }}>🔒</span>
-                    )}
-                  </label>
+                  <label>CNPJ</label>
                   <input
                     type="text"
                     value={companyForm.cnpj}
-                    onChange={(e) => setCompanyForm({ ...companyForm, cnpj: e.target.value })}
+                    onChange={(e) => updateCompanyFormField('cnpj', e.target.value)}
                     placeholder="00.000.000/0000-00"
                     inputMode="numeric"
-                    disabled={companyLocked || companySaving || companyLoading}
-                    title={companyLocked ? '🔒 Campo fixado — não pode ser alterado' : undefined}
+                    disabled={companySaving}
                   />
                 </div>
-
-                {/* ── CAMPOS NÃO-CRÍTICOS (sempre editáveis) ─────────────── */}
                 <div className="form-group">
                   <label>Telefone</label>
                   <input
                     type="tel"
                     value={companyForm.telefone}
-                    onChange={(e) => setCompanyForm({ ...companyForm, telefone: e.target.value })}
+                    onChange={(e) => updateCompanyFormField('telefone', e.target.value)}
                     placeholder="(43) 99999-9999"
                     inputMode="tel"
-                    disabled={companySaving || companyLoading}
+                    disabled={companySaving}
                   />
                 </div>
 
@@ -552,9 +440,9 @@ function ConfiguracoesPage() {
                   <input
                     type="text"
                     value={companyForm.endereco}
-                    onChange={(e) => setCompanyForm({ ...companyForm, endereco: e.target.value })}
+                    onChange={(e) => updateCompanyFormField('endereco', e.target.value)}
                     placeholder="Rua, número, bairro"
-                    disabled={companySaving || companyLoading}
+                    disabled={companySaving}
                   />
                 </div>
 
@@ -563,9 +451,9 @@ function ConfiguracoesPage() {
                   <input
                     type="text"
                     value={companyForm.cidade}
-                    onChange={(e) => setCompanyForm({ ...companyForm, cidade: e.target.value })}
+                    onChange={(e) => updateCompanyFormField('cidade', e.target.value)}
                     placeholder="Rolândia"
-                    disabled={companySaving || companyLoading}
+                    disabled={companySaving}
                   />
                 </div>
 
@@ -574,9 +462,9 @@ function ConfiguracoesPage() {
                   <input
                     type="text"
                     value={companyForm.estado}
-                    onChange={(e) => setCompanyForm({ ...companyForm, estado: e.target.value })}
+                    onChange={(e) => updateCompanyFormField('estado', e.target.value)}
                     placeholder="PR"
-                    disabled={companySaving || companyLoading}
+                    disabled={companySaving}
                   />
                 </div>
 
@@ -585,10 +473,10 @@ function ConfiguracoesPage() {
                   <input
                     type="text"
                     value={companyForm.cep}
-                    onChange={(e) => setCompanyForm({ ...companyForm, cep: e.target.value })}
+                    onChange={(e) => updateCompanyFormField('cep', e.target.value)}
                     placeholder="00000-000"
                     inputMode="numeric"
-                    disabled={companySaving || companyLoading}
+                    disabled={companySaving}
                   />
                 </div>
 
@@ -597,7 +485,7 @@ function ConfiguracoesPage() {
                     type="button"
                     className="btn-secondary"
                     onClick={() => setShowCompanyAdvanced((v) => !v)}
-                    disabled={companySaving || companyLoading}
+                    disabled={companySaving}
                     style={{ width: 'fit-content' }}
                   >
                     {showCompanyAdvanced ? 'Ocultar opções avançadas' : 'Mostrar opções avançadas'}
@@ -611,9 +499,9 @@ function ConfiguracoesPage() {
                       <input
                         type="url"
                         value={companyForm.logo_url}
-                        onChange={(e) => setCompanyForm({ ...companyForm, logo_url: e.target.value })}
+                        onChange={(e) => updateCompanyFormField('logo_url', e.target.value)}
                         placeholder="https://.../logo.png"
-                        disabled={companySaving || companyLoading}
+                        disabled={companySaving}
                       />
                     </div>
 
@@ -621,10 +509,10 @@ function ConfiguracoesPage() {
                       <label>Mensagem do Rodapé (opcional)</label>
                       <textarea
                         value={companyForm.mensagem_rodape}
-                        onChange={(e) => setCompanyForm({ ...companyForm, mensagem_rodape: e.target.value })}
+                        onChange={(e) => updateCompanyFormField('mensagem_rodape', e.target.value)}
                         placeholder="Ex: Obrigado pela preferência!"
                         rows={3}
-                        disabled={companySaving || companyLoading}
+                        disabled={companySaving}
                       />
                     </div>
                   </>
@@ -641,7 +529,7 @@ function ConfiguracoesPage() {
               {/* ── Botões de ação ─────────────────────────────────────────── */}
               <div className="form-actions" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
 
-                <button type="submit" className="btn-primary" disabled={companySaving || companyLoading}>
+                <button type="submit" className="btn-primary" disabled={companySaving}>
                   {companySaving ? '⏳ Salvando...' : '💾 Salvar Empresa'}
                 </button>
 
@@ -654,34 +542,14 @@ function ConfiguracoesPage() {
                   🔄 Atualizar
                 </button>
 
-                {/* Remover: oculto quando locked */}
-                {!companyLocked && (
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={handleDeleteCompany}
-                    disabled={companySaving}
-                    style={{ backgroundColor: 'var(--error, #ef4444)', color: 'white' }}
-                  >
-                    🗑️ Remover
-                  </button>
-                )}
-
-                {/* Fixar: desativado quando já locked */}
                 <button
                   type="button"
                   className="btn-secondary"
-                  disabled={companyLocked || companySaving || companyLoading || !companyForm.nome_fantasia.trim()}
-                  onClick={() => setShowLockModal(true)}
-                  title={companyLocked
-                    ? '🔒 Empresa já fixada — CNPJ e Razão Social são imutáveis'
-                    : 'Bloqueia permanentemente CNPJ, Razão Social e Nome Fantasia'}
-                  style={companyLocked
-                    ? { opacity: 0.5, cursor: 'not-allowed' }
-                    : { borderColor: '#f59e0b', color: '#f59e0b' }
-                  }
+                  onClick={handleDeleteCompany}
+                  disabled={companySaving}
+                  style={{ backgroundColor: 'var(--error, #ef4444)', color: 'white' }}
                 >
-                  {companyLocked ? '🔒 Empresa fixada' : '🔒 Fixar empresa'}
+                  🗑️ Remover
                 </button>
               </div>
 
@@ -1260,126 +1128,6 @@ function ConfiguracoesPage() {
       )}
       </div>
 
-      {/* ── Modal: Fixar Empresa ─────────────────────────────────────── */}
-      <LockCompanyModal
-        open={showLockModal}
-        companyName={companyForm.nome_fantasia}
-        cnpj={companyForm.cnpj}
-        razaoSocial={companyForm.razao_social}
-        loading={locking}
-        onConfirm={handleConfirmLock}
-        onCancel={() => setShowLockModal(false)}
-      />
-    </div>
-  );
-}
-
-// ─── Modal Fixar Empresa ─────────────────────────────────────────────────────
-
-function LockCompanyModal({
-  open,
-  companyName,
-  cnpj,
-  razaoSocial,
-  loading,
-  onConfirm,
-  onCancel,
-}: {
-  open: boolean;
-  companyName: string;
-  cnpj: string;
-  razaoSocial: string;
-  loading: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  const [confirmText, setConfirmText] = useState('');
-  const canConfirm = confirmText.trim().toUpperCase() === 'FIXAR';
-  useEffect(() => {
-    if (!open) setConfirmText('');
-  }, [open]);
-
-  if (!open) return null;
-
-  return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '1rem',
-      }}
-      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
-    >
-      <div style={{
-        background: 'var(--surface, #1e293b)',
-        border: '1px solid rgba(239,68,68,0.4)',
-        borderRadius: 16, padding: '2rem',
-        maxWidth: 480, width: '100%',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-      }}>
-        <div style={{ fontSize: 36, textAlign: 'center', marginBottom: '1rem' }}>🔒</div>
-
-        <h2 style={{ color: 'var(--text)', textAlign: 'center', marginBottom: '0.5rem', fontSize: '1.2rem' }}>
-          Fixar Empresa — Ação Irreversível
-        </h2>
-
-        <p style={{ color: 'var(--text-secondary, #94a3b8)', textAlign: 'center', marginBottom: '1.25rem', fontSize: 14, lineHeight: 1.5 }}>
-          Após fixar, <strong>CNPJ</strong>, <strong>Razão Social</strong> e <strong>Nome Fantasia</strong> não poderão ser alterados.
-          Essa ação é permanente e não pode ser desfeita pela interface.
-        </p>
-
-        <div style={{
-          background: 'rgba(15,23,42,0.6)', borderRadius: 10,
-          padding: '12px 16px', marginBottom: '1.5rem',
-          border: '1px solid rgba(148,163,184,0.15)',
-          fontSize: 13,
-        }}>
-          <div style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Dados que serão fixados:</div>
-          <div style={{ color: 'var(--text)', fontWeight: 600 }}>📛 {companyName || '(sem nome)'}</div>
-          {razaoSocial && <div style={{ color: 'var(--text)' }}>📋 {razaoSocial}</div>}
-          {cnpj && <div style={{ color: 'var(--text)' }}>🪪 {cnpj}</div>}
-          {!cnpj && <div style={{ color: '#f59e0b', fontSize: 12 }}>⚠️ CNPJ não preenchido — poderá ser corrigido antes de fixar.</div>}
-        </div>
-
-        
-        <div style={{ marginBottom: '1.25rem' }}>
-          <div style={{ color: 'var(--text-secondary, #94a3b8)', fontSize: 13, marginBottom: 6 }}>
-            Para confirmar, digite <strong>FIXAR</strong>:
-          </div>
-          <input
-            className="input"
-            value={confirmText}
-            onChange={(e) => setConfirmText(e.target.value)}
-            placeholder="Digite FIXAR"
-            autoComplete="off"
-            spellCheck={false}
-            style={{ width: '100%', maxWidth: 260 }}
-          />
-          <div style={{ color: 'var(--text-secondary, #94a3b8)', fontSize: 12, marginTop: 6 }}>
-            Isso evita fixar por engano.
-          </div>
-        </div>
-
-<div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-          <button
-            className="btn-secondary"
-            onClick={onCancel}
-            disabled={loading}
-            style={{ minWidth: 100 }}
-          >
-            Cancelar
-          </button>
-          <button
-            className="btn-primary"
-            onClick={onConfirm}
-            disabled={loading || !canConfirm}
-            style={{ minWidth: 160, background: '#dc2626', borderColor: '#dc2626' }}
-          >
-            {loading ? '⏳ Fixando...' : '🔒 Confirmar — Fixar Empresa'}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

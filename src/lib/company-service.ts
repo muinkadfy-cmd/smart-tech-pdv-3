@@ -22,8 +22,6 @@ import {
   getCompanyLockState,
   isCompanyLockedSync,
   lockCompany as doLockCompany,
-  validateCriticalFields,
-  validateDeleteCompany,
   type CompanyLockState,
   type CompanyCriticalSnapshot,
 } from '@/lib/company-lock';
@@ -33,7 +31,6 @@ export {
   initCompanyLock,
   getCompanyLockState,
   isCompanyLockedSync,
-  validateCriticalFields,
   type CompanyLockState,
   type CompanyCriticalSnapshot,
 };
@@ -163,13 +160,7 @@ export async function fetchCompany(): Promise<{ success: boolean; company?: Comp
 /**
  * Salva (cria ou edita) a empresa.
  *
- * Regras de lock:
- * — Se empresa NÃO está fixada: qualquer campo pode ser alterado.
- * — Se empresa ESTÁ fixada:
- *     • cnpj, razao_social, nome_fantasia são comparados com o snapshot.
- *       Qualquer divergência → rejeita com mensagem clara.
- *     • telefone, endereco, cidade, estado, cep, logo_url, mensagem_rodape
- *       → aceitos normalmente.
+ * O fluxo ativo permite editar normalmente os dados da empresa.
  */
 export async function upsertCompany(input: CompanyUpsertInput): Promise<{
   success: boolean;
@@ -182,20 +173,6 @@ export async function upsertCompany(input: CompanyUpsertInput): Promise<{
   if (!nome) {
     return { success: false, error: 'Nome fantasia é obrigatório.' };
   }
-
-  // ─── Enforcement do lock ────────────────────────────────────────────────────
-  const lockCheck = validateCriticalFields({
-    nome_fantasia: nome,
-    razao_social: trimOrNull(input.razao_social) ?? '',
-    cnpj: trimOrNull(input.cnpj) ?? '',
-  });
-
-  if (!lockCheck.allowed) {
-    // Tentativa de alterar campo crítico após lock — rejeita e loga
-    logger.error('[CompanyService] 🚫 Operação bloqueada pelo lock:', lockCheck.msg);
-    return { success: false, error: lockCheck.msg };
-  }
-  // ───────────────────────────────────────────────────────────────────────────
 
   const existing = safeGet<CompanyRow>(COMPANY_LOCAL_KEY, null);
   const prev = (existing?.success ? (existing.data as any) : null) as CompanyRow | null;
@@ -240,18 +217,10 @@ export async function upsertCompany(input: CompanyUpsertInput): Promise<{
 
 /**
  * Remove a empresa.
- * BLOQUEADO se a empresa estiver fixada.
+ * No fluxo atual, a remoção segue disponível na interface administrativa.
  */
 export async function deleteCompany(): Promise<{ success: boolean; error?: string }> {
   const scopeId = getCompanyScopeId();
-
-  // ─── Enforcement do lock ────────────────────────────────────────────────────
-  const deleteCheck = validateDeleteCompany();
-  if (!deleteCheck.allowed) {
-    logger.error('[CompanyService] 🚫 Deleção bloqueada:', deleteCheck.msg);
-    return { success: false, error: deleteCheck.msg };
-  }
-  // ───────────────────────────────────────────────────────────────────────────
 
   const existing = safeGet<CompanyRow>(COMPANY_LOCAL_KEY, null);
   const prev = (existing?.success ? (existing.data as any) : null) as CompanyRow | null;
@@ -281,23 +250,10 @@ export async function deleteCompany(): Promise<{ success: boolean; error?: strin
  * no formulário).
  */
 export async function lockCompany(): Promise<{ success: boolean; error?: string }> {
-  if (isCompanyLockedSync()) {
-    return { success: false, error: 'Empresa já está fixada.' };
-  }
-
-  // Lê do storage — não do formulário (anti-tamper)
-  const { company } = await fetchCompany();
-  if (!company) {
-    return { success: false, error: 'Salve os dados da empresa antes de fixar.' };
-  }
-
-  const snapshot: CompanyCriticalSnapshot = {
-    nome_fantasia: company.nome_fantasia ?? '',
-    razao_social: company.razao_social ?? '',
-    cnpj: company.cnpj ?? '',
-  };
-
-  return await doLockCompany(snapshot);
+  void doLockCompany;
+  const _snapshot: CompanyCriticalSnapshot | null = null;
+  void _snapshot;
+  return { success: false, error: 'Fixar empresa foi desativado neste fluxo.' };
 }
 
 /**
@@ -305,7 +261,8 @@ export async function lockCompany(): Promise<{ success: boolean; error?: string 
  * Síncrono — seguro para usar em condicional de render.
  */
 export function isCompanyLocked(): boolean {
-  return isCompanyLockedSync();
+  void isCompanyLockedSync;
+  return false;
 }
 
 // ─── Compat: ensureCompanyPresetApplied ──────────────────────────────────────
@@ -328,8 +285,6 @@ function getCompanyPreset(): CompanyPreset | null {
 export async function ensureCompanyPresetApplied(): Promise<void> {
   const preset = getCompanyPreset();
   if (!preset) return;
-  if (isCompanyLocked()) return;
-
   const { company: cur } = await fetchCompany();
 
   const shouldApply = !cur || !(cur.nome_fantasia ?? '').trim();

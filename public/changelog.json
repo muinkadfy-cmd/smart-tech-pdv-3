@@ -1,8 +1,71 @@
 {
-  "version": "2.0.42.20260331133922",
-  "build": "2026-03-31T13:39:22.723Z",
-  "commit": "build-20260331133922",
+  "version": "2.0.42.20260331150149",
+  "build": "2026-03-31T15:01:49.834Z",
+  "commit": "fdf84a6",
   "limit": 80,
-  "sections": {},
-  "generated_at": "2026-03-31T13:39:22.723Z"
+  "sections": {
+    "Outros": [
+      {
+        "hash": "fdf84a6",
+        "date": "2026-03-31T10:45:46-03:00",
+        "type": "other",
+        "text": "improve usados stock preview/download and bump public build version"
+      },
+      {
+        "hash": "44924ae",
+        "date": "2026-03-30T19:00:31-03:00",
+        "type": "other",
+        "text": "improve usados stock preview/download and bump public build version"
+      },
+      {
+        "hash": "aefcbdf",
+        "date": "2026-03-30T18:45:03-03:00",
+        "type": "other",
+        "text": "improve usados preview and download fallback for web and mobile"
+      },
+      {
+        "hash": "9b830f3",
+        "date": "2026-03-30T18:17:47-03:00",
+        "type": "other",
+        "text": "render asset modals via portal and harden stock action buttons"
+      },
+      {
+        "hash": "e8c5638",
+        "date": "2026-03-30T18:03:53-03:00",
+        "type": "other",
+        "text": "improve usados card contrast and add explicit download actions"
+      },
+      {
+        "hash": "1f75d23",
+        "date": "2026-03-30T17:17:17-03:00",
+        "type": "other",
+        "text": "improve sync flow and bump web update version to 2.0.43"
+      },
+      {
+        "hash": "6a33b3a",
+        "date": "2026-03-30T15:51:13-03:00",
+        "type": "other",
+        "text": "improve mobile login error for stale pwa cache"
+      },
+      {
+        "hash": "2ee89f3",
+        "date": "2026-03-30T15:33:06-03:00",
+        "type": "other",
+        "text": "adjust auth copy for no email confirmation"
+      },
+      {
+        "hash": "b3abb0c",
+        "date": "2026-03-30T14:18:47-03:00",
+        "type": "other",
+        "text": "fix ci unit test script"
+      },
+      {
+        "hash": "6416c3c",
+        "date": "2026-03-30T14:06:01-03:00",
+        "type": "other",
+        "text": "initial cloudflare deploy"
+      }
+    ]
+  },
+  "generated_at": "2026-03-31T15:01:49.834Z"
 }
