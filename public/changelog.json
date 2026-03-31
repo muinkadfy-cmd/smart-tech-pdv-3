@@ -1,10 +1,16 @@
 {
-  "version": "2.0.42.20260331153348",
-  "build": "2026-03-31T15:33:48.545Z",
-  "commit": "58dc8a8",
+  "version": "2.0.42.20260331160621",
+  "build": "2026-03-31T16:06:21.909Z",
+  "commit": "a06891c",
   "limit": 80,
   "sections": {
     "Outros": [
+      {
+        "hash": "a06891c",
+        "date": "2026-03-31T12:34:27-03:00",
+        "type": "other",
+        "text": "add company logo upload with preview and bump public build version"
+      },
       {
         "hash": "58dc8a8",
         "date": "2026-03-31T12:03:31-03:00",
@@ -73,5 +79,5 @@
       }
     ]
   },
-  "generated_at": "2026-03-31T15:33:48.545Z"
+  "generated_at": "2026-03-31T16:06:21.909Z"
 }

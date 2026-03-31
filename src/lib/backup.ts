@@ -7,7 +7,7 @@ import { logger } from '@/utils/logger';
 import { addToOutbox } from './repository/outbox';
 import { isLocalOnly } from './mode';
 import { getClientId, getStoragePrefix } from './tenant';
-import { safeRemove, safeSet } from './storage';
+import { safeGet, safeRemove, safeSet } from './storage';
 import { 
   clientesRepo, 
   produtosRepo, 
@@ -42,6 +42,7 @@ import { getSqliteDbForStore } from './repository/sqlite-db';
 import { encryptIfEnabled } from './desktop-crypto';
 import { saveBlobToDesktopAppData, saveBlobWithDialog } from '@/lib/capabilities/file-save-adapter';
 import { getCurrentSession } from './auth-supabase';
+import { fetchCompany, upsertCompany } from './company-service';
 
 // Hardening: rawStorage do backup é dado não confiável (pode vir de arquivo externo).
 // Permitimos apenas chaves do tenant no formato smarttech:<STORE_ID>:*
@@ -103,6 +104,7 @@ export interface BackupData {
     usadosArquivos: any[];
     fornecedores?: any[];
     taxasPagamento?: any[];
+    company?: any | null;
     /**
      * Anexos offline (IndexedDB) exportados em base64.
      * Opcional para retrocompatibilidade.
@@ -376,6 +378,7 @@ async function computeIntegrity(backup: BackupData): Promise<BackupIntegrity> {
     usadosArquivos: backup.data.usadosArquivos?.length || 0,
     fornecedores: backup.data.fornecedores?.length || 0,
     taxasPagamento: backup.data.taxasPagamento?.length || 0,
+    company: backup.data.company ? 1 : 0,
     usadosFiles: backup.data.usadosFiles?.length || 0,
     outbox: backup.data.outbox?.length || 0
   };
@@ -466,6 +469,8 @@ export async function exportBackup(opts?: ExportBackupOptions): Promise<BackupDa
 
     const platformState = await collectPlatformState();
 
+    const companyResult = await fetchCompany();
+
     const backup: BackupData = {
       version: BACKUP_VERSION,
       clientId,
@@ -490,6 +495,7 @@ export async function exportBackup(opts?: ExportBackupOptions): Promise<BackupDa
         usadosArquivos: usadosArquivosRepo.list(),
         fornecedores: fornecedoresRepo.list(),
         taxasPagamento: taxasPagamentoRepo.list(),
+        company: companyResult.success ? (companyResult.company ?? null) : null,
         outbox: getOutboxItems(),
         usuario: getUsuario(),
         rawStorage: {}
@@ -823,6 +829,10 @@ export function validateBackup(data: any): { valid: boolean; error?: string } {
     return { valid: false, error: 'Backup inválido: usadosFiles não é um array' };
   }
 
+  if (data.data.company !== undefined && data.data.company !== null && typeof data.data.company !== 'object') {
+    return { valid: false, error: 'Backup inválido: company deve ser objeto ou null' };
+  }
+
   // integrity é opcional (versões novas)
   if (data.platformState !== undefined) {
     if (!data.platformState || typeof data.platformState !== 'object' || Array.isArray(data.platformState)) {
@@ -885,6 +895,24 @@ async function restoreCollection<T>(
 ): Promise<void> {
   if (!Array.isArray(items)) return;
   stats[statsKey] = await repo.restoreMany(items);
+}
+
+function normalizeRestoredItems(
+  items: any[] | undefined,
+  restoreTargetStoreId?: string,
+  options?: { settings?: boolean }
+): any[] {
+  if (!Array.isArray(items)) return [];
+  if (!restoreTargetStoreId || !isValidUUID(restoreTargetStoreId)) return [...items];
+
+  return items.map((item) => {
+    if (!item || typeof item !== 'object') return item;
+
+    const next = { ...item, storeId: restoreTargetStoreId } as Record<string, any>;
+    if ('store_id' in next || options?.settings) next.store_id = restoreTargetStoreId;
+    if (options?.settings) next.id = restoreTargetStoreId;
+    return next;
+  });
 }
 
 function queueRestoredCollectionForSync(
@@ -1014,56 +1042,96 @@ async function applyBackupPayload(
   stats: Record<string, number>,
   restoreTargetStoreId?: string
 ): Promise<void> {
+  const restoredClientes = normalizeRestoredItems(backup.data.clientes, restoreTargetStoreId);
+  const restoredProdutos = normalizeRestoredItems(backup.data.produtos, restoreTargetStoreId);
+  const restoredVendas = normalizeRestoredItems(backup.data.vendas, restoreTargetStoreId);
+  const restoredOrdens = normalizeRestoredItems(backup.data.ordens, restoreTargetStoreId);
+  const restoredFinanceiro = normalizeRestoredItems(backup.data.financeiro, restoreTargetStoreId);
+  const restoredCobrancas = normalizeRestoredItems(backup.data.cobrancas, restoreTargetStoreId);
+  const restoredDevolucoes = normalizeRestoredItems(backup.data.devolucoes, restoreTargetStoreId);
+  const restoredEncomendas = normalizeRestoredItems(backup.data.encomendas, restoreTargetStoreId);
+  const restoredRecibos = normalizeRestoredItems(backup.data.recibos, restoreTargetStoreId);
+  const restoredCodigos = normalizeRestoredItems(backup.data.codigos, restoreTargetStoreId);
+  const restoredSettings = normalizeRestoredItems(backup.data.settings, restoreTargetStoreId, { settings: true });
+  const restoredPessoas = normalizeRestoredItems(backup.data.pessoas, restoreTargetStoreId);
+  const restoredUsados = normalizeRestoredItems(backup.data.usados, restoreTargetStoreId);
+  const restoredUsadosVendas = normalizeRestoredItems(backup.data.usadosVendas, restoreTargetStoreId);
+  const restoredUsadosArquivos = normalizeRestoredItems(backup.data.usadosArquivos, restoreTargetStoreId);
+  const restoredFornecedores = normalizeRestoredItems(backup.data.fornecedores, restoreTargetStoreId);
+  const restoredTaxasPagamento = normalizeRestoredItems(backup.data.taxasPagamento, restoreTargetStoreId);
+
   if (isDesktopApp() && restoreTargetStoreId && isValidUUID(restoreTargetStoreId)) {
-    await applyDesktopTransactionalRecords(backup, stats, restoreTargetStoreId);
+    await applyDesktopTransactionalRecords({
+      ...backup,
+      data: {
+        ...backup.data,
+        clientes: restoredClientes,
+        produtos: restoredProdutos,
+        vendas: restoredVendas,
+        ordens: restoredOrdens,
+        financeiro: restoredFinanceiro,
+        cobrancas: restoredCobrancas,
+        devolucoes: restoredDevolucoes,
+        encomendas: restoredEncomendas,
+        recibos: restoredRecibos,
+        codigos: restoredCodigos,
+        settings: restoredSettings,
+        pessoas: restoredPessoas,
+        usados: restoredUsados,
+        usadosVendas: restoredUsadosVendas,
+        usadosArquivos: restoredUsadosArquivos,
+        fornecedores: restoredFornecedores,
+        taxasPagamento: restoredTaxasPagamento,
+      }
+    }, stats, restoreTargetStoreId);
   } else {
-    await restoreCollection(clientesRepo, backup.data.clientes, stats, 'clientes');
-    await restoreCollection(produtosRepo, backup.data.produtos, stats, 'produtos');
+    await restoreCollection(clientesRepo, restoredClientes, stats, 'clientes');
+    await restoreCollection(produtosRepo, restoredProdutos, stats, 'produtos');
     if (isDesktopApp()) {
-      await restoreCollection(vendasRepo, backup.data.vendas, stats, 'vendas');
+      await restoreCollection(vendasRepo, restoredVendas, stats, 'vendas');
     }
-    await restoreCollection(ordensRepo, backup.data.ordens, stats, 'ordens');
-    await restoreCollection(financeiroRepo, backup.data.financeiro, stats, 'financeiro');
-    await restoreCollection(cobrancasRepo, backup.data.cobrancas, stats, 'cobrancas');
-    await restoreCollection(devolucoesRepo, backup.data.devolucoes, stats, 'devolucoes');
-    await restoreCollection(encomendasRepo, backup.data.encomendas, stats, 'encomendas');
-    await restoreCollection(recibosRepo, backup.data.recibos, stats, 'recibos');
-    await restoreCollection(codigosRepo, backup.data.codigos, stats, 'codigos');
-    await restoreCollection(settingsRepo, backup.data.settings, stats, 'settings');
-    await restoreCollection(pessoasRepo, backup.data.pessoas, stats, 'pessoas');
-    await restoreCollection(usadosRepo, backup.data.usados, stats, 'usados');
-    await restoreCollection(usadosVendasRepo, backup.data.usadosVendas, stats, 'usadosVendas');
-    await restoreCollection(usadosArquivosRepo, backup.data.usadosArquivos, stats, 'usadosArquivos');
-    await restoreCollection(fornecedoresRepo, backup.data.fornecedores, stats, 'fornecedores');
-    await restoreCollection(taxasPagamentoRepo, backup.data.taxasPagamento, stats, 'taxasPagamento');
+    await restoreCollection(ordensRepo, restoredOrdens, stats, 'ordens');
+    await restoreCollection(financeiroRepo, restoredFinanceiro, stats, 'financeiro');
+    await restoreCollection(cobrancasRepo, restoredCobrancas, stats, 'cobrancas');
+    await restoreCollection(devolucoesRepo, restoredDevolucoes, stats, 'devolucoes');
+    await restoreCollection(encomendasRepo, restoredEncomendas, stats, 'encomendas');
+    await restoreCollection(recibosRepo, restoredRecibos, stats, 'recibos');
+    await restoreCollection(codigosRepo, restoredCodigos, stats, 'codigos');
+    await restoreCollection(settingsRepo, restoredSettings, stats, 'settings');
+    await restoreCollection(pessoasRepo, restoredPessoas, stats, 'pessoas');
+    await restoreCollection(usadosRepo, restoredUsados, stats, 'usados');
+    await restoreCollection(usadosVendasRepo, restoredUsadosVendas, stats, 'usadosVendas');
+    await restoreCollection(usadosArquivosRepo, restoredUsadosArquivos, stats, 'usadosArquivos');
+    await restoreCollection(fornecedoresRepo, restoredFornecedores, stats, 'fornecedores');
+    await restoreCollection(taxasPagamentoRepo, restoredTaxasPagamento, stats, 'taxasPagamento');
   }
 
   // Em Web/PWA, o restore é local primeiro. Para refletir em outros dispositivos,
   // enfileiramos os registros restaurados para sincronização com o Supabase.
   if (!isDesktopApp()) {
-    queueRestoredCollectionForSync('clientes', backup.data.clientes);
-    queueRestoredCollectionForSync('produtos', backup.data.produtos);
-    queueRestoredCollectionForSync('ordens_servico', backup.data.ordens);
-    queueRestoredCollectionForSync('financeiro', backup.data.financeiro);
-    queueRestoredCollectionForSync('cobrancas', backup.data.cobrancas);
-    queueRestoredCollectionForSync('devolucoes', backup.data.devolucoes);
-    queueRestoredCollectionForSync('encomendas', backup.data.encomendas);
-    queueRestoredCollectionForSync('recibos', backup.data.recibos);
-    queueRestoredCollectionForSync('codigos', backup.data.codigos);
-    queueRestoredCollectionForSync('settings', backup.data.settings);
-    queueRestoredCollectionForSync('pessoas', backup.data.pessoas);
-    queueRestoredCollectionForSync('usados', backup.data.usados);
-    queueRestoredCollectionForSync('usados_vendas', backup.data.usadosVendas);
-    queueRestoredCollectionForSync('usados_arquivos', backup.data.usadosArquivos);
-    queueRestoredCollectionForSync('fornecedores', backup.data.fornecedores);
-    queueRestoredCollectionForSync('taxas_pagamento', backup.data.taxasPagamento);
+    queueRestoredCollectionForSync('clientes', restoredClientes);
+    queueRestoredCollectionForSync('produtos', restoredProdutos);
+    queueRestoredCollectionForSync('ordens_servico', restoredOrdens);
+    queueRestoredCollectionForSync('financeiro', restoredFinanceiro);
+    queueRestoredCollectionForSync('cobrancas', restoredCobrancas);
+    queueRestoredCollectionForSync('devolucoes', restoredDevolucoes);
+    queueRestoredCollectionForSync('encomendas', restoredEncomendas);
+    queueRestoredCollectionForSync('recibos', restoredRecibos);
+    queueRestoredCollectionForSync('codigos', restoredCodigos);
+    queueRestoredCollectionForSync('settings', restoredSettings);
+    queueRestoredCollectionForSync('pessoas', restoredPessoas);
+    queueRestoredCollectionForSync('usados', restoredUsados);
+    queueRestoredCollectionForSync('usados_vendas', restoredUsadosVendas);
+    queueRestoredCollectionForSync('usados_arquivos', restoredUsadosArquivos);
+    queueRestoredCollectionForSync('fornecedores', restoredFornecedores);
+    queueRestoredCollectionForSync('taxas_pagamento', restoredTaxasPagamento);
 
     // Vendas usam fluxo especial fora da outbox.
     // Marcar como pending força o sync engine a revalidar/enviar essas vendas.
     if (Array.isArray(backup.data.vendas)) {
       await restoreCollection(
         vendasRepo,
-        backup.data.vendas.map((item: any) => ({
+        restoredVendas.map((item: any) => ({
           ...item,
           sync_status: 'pending',
           sync_error: undefined,
@@ -1120,6 +1188,26 @@ async function applyBackupPayload(
       if (skipped > 0) logger.warn(`[Backup] rawStorage: ${skipped} chaves ignoradas por segurança.`);
     }
   }
+
+  if (backup.data.company && typeof backup.data.company === 'object') {
+    try {
+      await upsertCompany({
+        nome_fantasia: String(backup.data.company.nome_fantasia || ''),
+        razao_social: backup.data.company.razao_social || undefined,
+        cnpj: backup.data.company.cnpj || undefined,
+        telefone: backup.data.company.telefone || undefined,
+        endereco: backup.data.company.endereco || undefined,
+        cidade: backup.data.company.cidade || undefined,
+        estado: backup.data.company.estado || undefined,
+        cep: backup.data.company.cep || undefined,
+        logo_url: backup.data.company.logo_url || undefined,
+        mensagem_rodape: backup.data.company.mensagem_rodape || undefined,
+      });
+      stats.company = backup.data.company ? 1 : 0;
+    } catch (error) {
+      logger.warn('[Backup] Falha ao restaurar dados explicitos da empresa:', error);
+    }
+  }
 }
 
 function getExpectedRestoreCounts(backup: BackupData): Record<string, number> {
@@ -1141,10 +1229,12 @@ function getExpectedRestoreCounts(backup: BackupData): Record<string, number> {
     usadosArquivos: backup.data.usadosArquivos?.length || 0,
     fornecedores: backup.data.fornecedores?.length || 0,
     taxasPagamento: backup.data.taxasPagamento?.length || 0,
+    company: backup.data.company ? 1 : 0,
   };
 }
 
 function getLiveRestoreCounts(): Record<string, number> {
+  const companyLocal = safeGet<any>('smart-tech-company', null);
   return {
     clientes: clientesRepo.count(),
     produtos: produtosRepo.count(),
@@ -1163,6 +1253,7 @@ function getLiveRestoreCounts(): Record<string, number> {
     usadosArquivos: usadosArquivosRepo.count(),
     fornecedores: fornecedoresRepo.count(),
     taxasPagamento: taxasPagamentoRepo.count(),
+    company: companyLocal?.success && companyLocal.data ? 1 : 0,
   };
 }
 
@@ -1334,6 +1425,19 @@ export async function restoreBackup(backup: BackupData, confirmOverwrite: boolea
 
     // P9: checkpoint imediato após restore (garante WAL limpo e melhora estabilidade)
     try { await forceSqliteCheckpoint('after-restore'); } catch { /* ignore */ }
+
+    try {
+      const finalStoreId = restoreTargetStoreId || currentStoreId || getValidStoreIdOrNull() || undefined;
+      window.dispatchEvent(new CustomEvent('smarttech:sqlite-ready'));
+      window.dispatchEvent(new CustomEvent('smarttech:store-changed', { detail: { storeId: finalStoreId } }));
+      window.dispatchEvent(new CustomEvent('smart-tech-movimentacao-criada', { detail: { source: 'backup-restore' } }));
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'smart-tech-backup-restored',
+        newValue: String(Date.now())
+      }));
+    } catch {
+      // ignore
+    }
 
     return { success: true, stats, warnings: verificationWarnings };
     } catch (innerError) {
