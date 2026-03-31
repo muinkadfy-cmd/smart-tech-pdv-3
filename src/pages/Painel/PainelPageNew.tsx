@@ -33,6 +33,10 @@ type OperacionalResumo = {
   ordensConcluidas: number;
 };
 
+function buildZeroAwareHelper(value: number, zeroText: string, normalText: string): string {
+  return value === 0 ? zeroText : normalText;
+}
+
 const PERIOD_OPTIONS: PeriodOption[] = [
   { value: '24h', label: 'Últimas 24h', activeLabel: 'Últimas 24 horas' },
   { value: '3days', label: 'Últimos 3 dias', activeLabel: 'Últimos 3 dias' },
@@ -457,8 +461,14 @@ function PainelPageNew() {
             </div>
             <div className="kpi-meta">
               <div className="kpi-label">Vendas registradas</div>
-              <div className="kpi-value">{resumoOperacional.vendasRegistradas}</div>
-              <div className="kpi-helper">Quantidade operacional no período.</div>
+              <div className={`kpi-value ${resumoOperacional.vendasRegistradas === 0 ? 'is-zero' : ''}`}>{resumoOperacional.vendasRegistradas}</div>
+              <div className={`kpi-helper ${resumoOperacional.vendasRegistradas === 0 ? 'is-zero' : ''}`}>
+                {buildZeroAwareHelper(
+                  resumoOperacional.vendasRegistradas,
+                  'Nenhuma venda registrada neste recorte.',
+                  'Quantidade operacional no período.'
+                )}
+              </div>
             </div>
           </Link>
 
@@ -468,11 +478,15 @@ function PainelPageNew() {
             </div>
             <div className="kpi-meta">
               <div className="kpi-label">O.S. em aberto</div>
-              <div className="kpi-value">{resumoOperacional.ordensAbertasNoPeriodo}</div>
-              <div className="kpi-helper">
+              <div className={`kpi-value ${resumoOperacional.ordensAbertasNoPeriodo === 0 ? 'is-zero' : ''}`}>{resumoOperacional.ordensAbertasNoPeriodo}</div>
+              <div className={`kpi-helper ${resumoOperacional.ordensAbertasNoPeriodo === 0 ? 'is-zero' : ''}`}>
                 {periodMode === '24h'
-                  ? `Abertas nas ultimas 24h. Total em andamento: ${resumoOperacional.ordensAbertasTotal}`
-                  : `Abertas no recorte. Total em andamento: ${resumoOperacional.ordensAbertasTotal}`}
+                  ? resumoOperacional.ordensAbertasNoPeriodo === 0
+                    ? `Nenhuma O.S. aberta nas ultimas 24h. Total em andamento: ${resumoOperacional.ordensAbertasTotal}`
+                    : `Abertas nas ultimas 24h. Total em andamento: ${resumoOperacional.ordensAbertasTotal}`
+                  : resumoOperacional.ordensAbertasNoPeriodo === 0
+                    ? `Nenhuma O.S. aberta neste recorte. Total em andamento: ${resumoOperacional.ordensAbertasTotal}`
+                    : `Abertas no recorte. Total em andamento: ${resumoOperacional.ordensAbertasTotal}`}
               </div>
             </div>
           </Link>
@@ -483,8 +497,14 @@ function PainelPageNew() {
             </div>
             <div className="kpi-meta">
               <div className="kpi-label">O.S. pagas</div>
-              <div className="kpi-value">{resumoOperacional.ordensPagas}</div>
-              <div className="kpi-helper">Ordens pagas no recorte atual.</div>
+              <div className={`kpi-value ${resumoOperacional.ordensPagas === 0 ? 'is-zero' : ''}`}>{resumoOperacional.ordensPagas}</div>
+              <div className={`kpi-helper ${resumoOperacional.ordensPagas === 0 ? 'is-zero' : ''}`}>
+                {buildZeroAwareHelper(
+                  resumoOperacional.ordensPagas,
+                  'Nenhuma O.S. paga neste recorte.',
+                  'Ordens pagas no recorte atual.'
+                )}
+              </div>
             </div>
           </Link>
 
@@ -494,8 +514,14 @@ function PainelPageNew() {
             </div>
             <div className="kpi-meta">
               <div className="kpi-label">O.S. concluídas</div>
-              <div className="kpi-value">{resumoOperacional.ordensConcluidas}</div>
-              <div className="kpi-helper">Concluídas no período selecionado.</div>
+              <div className={`kpi-value ${resumoOperacional.ordensConcluidas === 0 ? 'is-zero' : ''}`}>{resumoOperacional.ordensConcluidas}</div>
+              <div className={`kpi-helper ${resumoOperacional.ordensConcluidas === 0 ? 'is-zero' : ''}`}>
+                {buildZeroAwareHelper(
+                  resumoOperacional.ordensConcluidas,
+                  'Nenhuma O.S. concluída neste recorte.',
+                  'Concluídas no período selecionado.'
+                )}
+              </div>
             </div>
           </Link>
         </div>
@@ -513,8 +539,10 @@ function PainelPageNew() {
             </div>
             <div className="kpi-meta">
               <div className="kpi-label">Serviços</div>
-              <div className="kpi-value">{formatCurrency(resumo.servicos.total)}</div>
-              <div className="kpi-helper">{resumo.servicos.quantidade} serviços</div>
+              <div className={`kpi-value ${resumo.servicos.total === 0 ? 'is-zero' : ''}`}>{formatCurrency(resumo.servicos.total)}</div>
+              <div className={`kpi-helper ${resumo.servicos.quantidade === 0 ? 'is-zero' : ''}`}>
+                {resumo.servicos.quantidade === 0 ? 'Nenhum servico financeiro neste recorte.' : `${resumo.servicos.quantidade} serviços`}
+              </div>
             </div>
           </Link>
 
@@ -524,8 +552,10 @@ function PainelPageNew() {
             </div>
             <div className="kpi-meta">
               <div className="kpi-label">Vendas</div>
-              <div className="kpi-value">{formatCurrency(resumo.vendas.total)}</div>
-              <div className="kpi-helper">{resumo.vendas.quantidade} vendas</div>
+              <div className={`kpi-value ${resumo.vendas.total === 0 ? 'is-zero' : ''}`}>{formatCurrency(resumo.vendas.total)}</div>
+              <div className={`kpi-helper ${resumo.vendas.quantidade === 0 ? 'is-zero' : ''}`}>
+                {resumo.vendas.quantidade === 0 ? 'Nenhuma venda financeira neste recorte.' : `${resumo.vendas.quantidade} vendas`}
+              </div>
             </div>
           </Link>
 
@@ -535,8 +565,10 @@ function PainelPageNew() {
             </div>
             <div className="kpi-meta">
               <div className="kpi-label">Gastos</div>
-              <div className="kpi-value">{formatCurrency(resumo.gastos.total)}</div>
-              <div className="kpi-helper">{resumo.gastos.quantidade} gastos</div>
+              <div className={`kpi-value ${resumo.gastos.total === 0 ? 'is-zero' : ''}`}>{formatCurrency(resumo.gastos.total)}</div>
+              <div className={`kpi-helper ${resumo.gastos.quantidade === 0 ? 'is-zero' : ''}`}>
+                {resumo.gastos.quantidade === 0 ? 'Nenhum gasto financeiro neste recorte.' : `${resumo.gastos.quantidade} gastos`}
+              </div>
             </div>
           </Link>
 
@@ -546,8 +578,10 @@ function PainelPageNew() {
             </div>
             <div className="kpi-meta">
               <div className="kpi-label">Saldo Diário</div>
-              <div className="kpi-value">{formatCurrency(resumo.saldoDiario)}</div>
-              <div className="kpi-helper">{resumo.totalMovimentacoes || 0} movimentações</div>
+              <div className={`kpi-value ${resumo.saldoDiario === 0 ? 'is-zero' : ''}`}>{formatCurrency(resumo.saldoDiario)}</div>
+              <div className={`kpi-helper ${(resumo.totalMovimentacoes || 0) === 0 ? 'is-zero' : ''}`}>
+                {(resumo.totalMovimentacoes || 0) === 0 ? 'Nenhuma movimentacao consolidada neste recorte.' : `${resumo.totalMovimentacoes || 0} movimentações`}
+              </div>
             </div>
           </Link>
         </div>
