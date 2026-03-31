@@ -1439,8 +1439,15 @@ export function printDocument(
   const isThermal = papel === '58mm' || papel === '80mm';
   const preset = papel === '58mm' ? '58mm' : '80mm';
 
-  // ✅ ESC/POS (RAW) somente para térmica
-  if (engine === 'escpos' && isDesktopApp() && isThermal) {
+  const shouldUseEscposThermal =
+    engine === 'escpos' &&
+    isDesktopApp() &&
+    isThermal &&
+    !empresa.logo_url;
+
+  // ✅ ESC/POS (RAW) somente para térmica sem logo.
+  // Quando a empresa usa logo, forçamos HTML para manter o cabeçalho visual.
+  if (shouldUseEscposThermal) {
     void (async () => {
       const bytes = buildEscposReceiptFromPrintData(data, empresa, preset, modo);
       const jobName = `Smart Tech PDV - ${data.tipo} ${data.numero || ''}`.trim();

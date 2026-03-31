@@ -32,7 +32,7 @@ import { getDeviceId } from './device';
 import { getUsuario } from './usuario';
 import { getPinnedBackupDirectory, writeFileToDirectory, rotateBackupsInDirectory } from './backup-folder';
 import { putUsadoFile, clearUsadoFilesByClientId, getUsadoFileBlob } from './usados-files-store';
-import { LOCAL_USADOS_BUCKET } from './usados-uploads';
+import { LOCAL_USADOS_BUCKET, promoteLocalUsadoArquivoToRemote } from './usados-uploads';
 import { getValidStoreIdOrNull, isValidUUID, setStoreId } from './store-id';
 import { scheduleSqliteCheckpoint, forceSqliteCheckpoint } from './sqlite-maintenance';
 import { isDesktopApp } from './platform';
@@ -1056,7 +1056,7 @@ async function applyBackupPayload(
   const restoredPessoas = normalizeRestoredItems(backup.data.pessoas, restoreTargetStoreId);
   const restoredUsados = normalizeRestoredItems(backup.data.usados, restoreTargetStoreId);
   const restoredUsadosVendas = normalizeRestoredItems(backup.data.usadosVendas, restoreTargetStoreId);
-  const restoredUsadosArquivos = normalizeRestoredItems(backup.data.usadosArquivos, restoreTargetStoreId);
+  let restoredUsadosArquivos = normalizeRestoredItems(backup.data.usadosArquivos, restoreTargetStoreId);
   const restoredFornecedores = normalizeRestoredItems(backup.data.fornecedores, restoreTargetStoreId);
   const restoredTaxasPagamento = normalizeRestoredItems(backup.data.taxasPagamento, restoreTargetStoreId);
 
@@ -1122,7 +1122,6 @@ async function applyBackupPayload(
     queueRestoredCollectionForSync('pessoas', restoredPessoas);
     queueRestoredCollectionForSync('usados', restoredUsados);
     queueRestoredCollectionForSync('usados_vendas', restoredUsadosVendas);
-    queueRestoredCollectionForSync('usados_arquivos', restoredUsadosArquivos);
     queueRestoredCollectionForSync('fornecedores', restoredFornecedores);
     queueRestoredCollectionForSync('taxas_pagamento', restoredTaxasPagamento);
 
@@ -1166,6 +1165,29 @@ async function applyBackupPayload(
       }
     }
     stats.usadosFiles = restored;
+  }
+
+  if (!isDesktopApp() && restoredUsadosArquivos.length > 0) {
+    const migratedRows = [];
+    for (const arquivo of restoredUsadosArquivos) {
+      if (arquivo?.bucket !== LOCAL_USADOS_BUCKET) {
+        migratedRows.push(arquivo);
+        continue;
+      }
+
+      try {
+        const migrated = await promoteLocalUsadoArquivoToRemote(arquivo as any);
+        migratedRows.push(migrated as any);
+      } catch (error) {
+        logger.warn('[Backup] Falha ao enviar anexo restaurado para o Supabase; mantendo local/offline:', arquivo?.id, error);
+        migratedRows.push(arquivo);
+      }
+    }
+    restoredUsadosArquivos = migratedRows as any;
+  }
+
+  if (!isDesktopApp()) {
+    queueRestoredCollectionForSync('usados_arquivos', restoredUsadosArquivos);
   }
 
   await restoreDesktopKvSnapshot(backup.platformState?.desktopKv, restoreTargetStoreId);

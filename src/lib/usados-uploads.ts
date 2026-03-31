@@ -181,6 +181,63 @@ export async function uploadDocument(usadoId: string, file: File): Promise<Usado
   return uploadToBucket({ usadoId, file, kind: 'document' });
 }
 
+function inferExtension(kind: UsadoArquivoKind, originalName?: string, mimeType?: string): string {
+  const fromName = originalName?.includes('.') ? originalName.split('.').pop()?.toLowerCase() : '';
+  if (fromName) return fromName;
+
+  const mime = (mimeType || '').toLowerCase();
+  if (mime.includes('png')) return 'png';
+  if (mime.includes('jpeg') || mime.includes('jpg')) return 'jpg';
+  if (mime.includes('webp')) return 'webp';
+  if (mime.includes('pdf')) return 'pdf';
+  if (mime.includes('gif')) return 'gif';
+  return kind === 'photo' ? 'jpg' : 'pdf';
+}
+
+export async function promoteLocalUsadoArquivoToRemote(arquivo: UsadoArquivo): Promise<UsadoArquivo> {
+  if (!isLocalBucket(arquivo.bucket)) return arquivo;
+  if (isLocalOnly() || !isSupabaseConfigured() || !isBrowserOnlineSafe()) return arquivo;
+
+  requireSupabase();
+  const storeId = requireStoreId();
+  const blob = await getUsadoFileBlob(arquivo.path);
+  if (!blob) {
+    throw new Error('Arquivo local restaurado não encontrado para envio remoto.');
+  }
+
+  const bucket = arquivo.kind === 'photo' ? BUCKET_USADOS_PHOTOS : BUCKET_USADOS_DOCS;
+  const extension = inferExtension(arquivo.kind, arquivo.originalName, arquivo.mimeType || blob.type || undefined);
+  const baseName = sanitizeFilename(arquivo.originalName || `${arquivo.kind}.${extension}`);
+  const fileName = baseName.includes('.') ? baseName : `${baseName}.${extension}`;
+  const remotePath = `${storeId}/${arquivo.usadoId}/${Date.now()}-${fileName}`;
+
+  const file = new File([blob], arquivo.originalName || fileName, {
+    type: arquivo.mimeType || blob.type || 'application/octet-stream'
+  });
+
+  const { error } = await uploadRemoteUsadoFile(bucket, remotePath, file);
+  if (error) {
+    throw new Error(error.message || 'Falha ao enviar anexo restaurado para o Supabase.');
+  }
+
+  const updated: UsadoArquivo = {
+    ...arquivo,
+    bucket,
+    path: remotePath,
+    mimeType: arquivo.mimeType || blob.type || undefined,
+    originalName: arquivo.originalName || fileName,
+    sizeBytes: arquivo.sizeBytes || blob.size || undefined,
+    storeId,
+  };
+
+  const saved = await usadosArquivosRepo.upsert(updated);
+  if (!saved) {
+    throw new Error('Falha ao atualizar metadata do anexo restaurado após upload remoto.');
+  }
+
+  return saved;
+}
+
 export async function downloadFile(bucket: string, path: string): Promise<Blob> {
   if (isLocalBucket(bucket)) {
     const blob = await getUsadoFileBlob(path);
