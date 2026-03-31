@@ -18,6 +18,16 @@ import {
   generatePendingNumber
 } from './sequenceRange';
 
+let lastOrdemError: string | null = null;
+
+function setLastOrdemError(message: string | null) {
+  lastOrdemError = message;
+}
+
+export function getLastOrdemError(): string | null {
+  return lastOrdemError;
+}
+
 export function getOrdens(): OrdemServico[] {
   const items = ordensRepo.list();
   return filterValid(items, isValidOrdemServico);
@@ -29,30 +39,36 @@ export async function getOrdensAsync(): Promise<OrdemServico[]> {
 }
 
 export async function criarOrdem(ordem: Omit<OrdemServico, 'id' | 'numero' | 'dataAbertura' | 'status'> & { status?: StatusOrdem }): Promise<OrdemServico | null> {
+  setLastOrdemError(null);
   // Validação básica
   if (!ordem.clienteId || !ordem.clienteNome || !ordem.clienteNome.trim()) {
     logger.error('Cliente é obrigatório');
+    setLastOrdemError('Selecione um cliente valido antes de salvar a O.S.');
     return null;
   }
 
   if (!ordem.equipamento || !ordem.equipamento.trim()) {
     logger.error('Equipamento é obrigatório');
+    setLastOrdemError('Informe o equipamento para continuar.');
     return null;
   }
 
   if (!ordem.defeito || !ordem.defeito.trim()) {
     logger.error('Defeito é obrigatório');
+    setLastOrdemError('Informe pelo menos um defeito relatado para abrir a O.S.');
     return null;
   }
 
   // Valida valores monetários
   if (ordem.valorServico !== undefined && ordem.valorServico < 0) {
     logger.error('Valor do serviço não pode ser negativo');
+    setLastOrdemError('O valor do servico nao pode ser negativo.');
     return null;
   }
 
   if (ordem.valorPecas !== undefined && ordem.valorPecas < 0) {
     logger.error('Valor das peças não pode ser negativo');
+    setLastOrdemError('O valor das pecas nao pode ser negativo.');
     return null;
   }
 
@@ -67,7 +83,10 @@ export async function criarOrdem(ordem: Omit<OrdemServico, 'id' | 'numero' | 'da
   const totalLiquido = calcTotalLiquidoOS(totalBruto, desconto, taxaCartaoValor);
   // Resolver store_id dinâmico (multi-tenant)
   const storeId = requireStoreId('Ordens');
-  if (!storeId) return null;
+  if (!storeId) {
+    setLastOrdemError('A loja ativa nao foi identificada. Reabra o sistema ou troque novamente para a loja correta.');
+    return null;
+  }
 
   // Obter ou solicitar range de numeração
   const range = await getOrRequestRange('os', storeId, 100);
@@ -143,6 +162,7 @@ export async function criarOrdem(ordem: Omit<OrdemServico, 'id' | 'numero' | 'da
   // Valida antes de salvar
   if (!isValidOrdemServico(novaOrdem)) {
     logger.error('Ordem criada é inválida');
+    setLastOrdemError('Os dados da O.S. ficaram invalidos. Revise cliente, equipamento e valores.');
     return null;
   }
 
@@ -151,6 +171,7 @@ export async function criarOrdem(ordem: Omit<OrdemServico, 'id' | 'numero' | 'da
   
   if (!saved) {
     logger.error('[Ordens] Erro ao salvar ordem');
+    setLastOrdemError('Nao foi possivel salvar a O.S. localmente. Tente novamente.');
     return null;
   }
   
@@ -187,37 +208,44 @@ export async function criarOrdem(ordem: Omit<OrdemServico, 'id' | 'numero' | 'da
 }
 
 export async function atualizarOrdem(id: string, updates: Partial<Omit<OrdemServico, 'id' | 'numero' | 'dataAbertura'>>): Promise<OrdemServico | null> {
+  setLastOrdemError(null);
   const ordens = getOrdens();
   const index = ordens.findIndex(o => o.id === id);
 
   if (index === -1) {
     logger.warn(`Ordem com id ${id} não encontrada`);
+    setLastOrdemError('A O.S. nao foi encontrada para atualizacao. Recarregue a lista.');
     return null;
   }
 
   // Validações
   if (updates.clienteNome !== undefined && !updates.clienteNome.trim()) {
     logger.error('Nome do cliente não pode ser vazio');
+    setLastOrdemError('O nome do cliente nao pode ficar vazio.');
     return null;
   }
 
   if (updates.equipamento !== undefined && !updates.equipamento.trim()) {
     logger.error('Equipamento não pode ser vazio');
+    setLastOrdemError('O equipamento nao pode ficar vazio.');
     return null;
   }
 
   if (updates.defeito !== undefined && !updates.defeito.trim()) {
     logger.error('Defeito não pode ser vazio');
+    setLastOrdemError('Informe o defeito antes de salvar a O.S.');
     return null;
   }
 
   if (updates.valorServico !== undefined && updates.valorServico < 0) {
     logger.error('Valor do serviço não pode ser negativo');
+    setLastOrdemError('O valor do servico nao pode ser negativo.');
     return null;
   }
 
   if (updates.valorPecas !== undefined && updates.valorPecas < 0) {
     logger.error('Valor das peças não pode ser negativo');
+    setLastOrdemError('O valor das pecas nao pode ser negativo.');
     return null;
   }
 
@@ -315,6 +343,7 @@ export async function atualizarOrdem(id: string, updates: Partial<Omit<OrdemServ
 
   if (!isValidOrdemServico(atualizada)) {
     logger.error('Ordem atualizada é inválida');
+    setLastOrdemError('Os dados atualizados da O.S. ficaram invalidos. Revise os campos e tente novamente.');
     return null;
   }
   
@@ -323,6 +352,7 @@ export async function atualizarOrdem(id: string, updates: Partial<Omit<OrdemServ
   
   if (!saved) {
     logger.error('[Ordens] Erro ao salvar ordem atualizada');
+    setLastOrdemError('Nao foi possivel salvar a O.S. atualizada. Tente novamente.');
     return null;
   }
 

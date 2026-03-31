@@ -25,6 +25,16 @@ import {
   upsertRemoteVenda
 } from '@/lib/capabilities/sales-remote-adapter';
 
+let lastVendaError: string | null = null;
+
+function setLastVendaError(message: string | null) {
+  lastVendaError = message;
+}
+
+export function getLastVendaError(): string | null {
+  return lastVendaError;
+}
+
 // Mantém compatibilidade com código existente
 export function getVendas(): Venda[] {
   const items = vendasRepo.list();
@@ -241,9 +251,11 @@ async function trySyncVendaToSupabase(v: Venda): Promise<void> {
 
 
 export async function criarVenda(venda: Omit<Venda, 'data' | 'id'> & { id?: string }): Promise<Venda | null> {
+  setLastVendaError(null);
   // Validação básica
   if (!venda.itens || venda.itens.length === 0) {
     logger.error('Venda deve ter pelo menos um item');
+    setLastVendaError('Adicione pelo menos um item antes de finalizar a venda.');
     return null;
   }
 
@@ -258,6 +270,7 @@ export async function criarVenda(venda: Omit<Venda, 'data' | 'id'> & { id?: stri
 
   if (!venda.vendedor || !venda.vendedor.trim()) {
     logger.error('Vendedor é obrigatório');
+    setLastVendaError('Nao foi possivel identificar o vendedor. Feche e abra a tela novamente.');
     return null;
   }
 
@@ -282,7 +295,10 @@ export async function criarVenda(venda: Omit<Venda, 'data' | 'id'> & { id?: stri
   const totalLiquido = Math.max(0, totalFinal - taxaCartaoValor);
   // Resolver store_id dinâmico (multi-tenant)
   const storeId = requireStoreId('Vendas');
-  if (!storeId) return null;
+  if (!storeId) {
+    setLastVendaError('A loja ativa nao foi identificada. Reabra o sistema ou troque novamente para a loja correta.');
+    return null;
+  }
 
   // ✅ CORREÇÃO CRÍTICA: ID gerado APENAS se não fornecido
   // Isso permite retry sem gerar novo ID
@@ -312,6 +328,7 @@ export async function criarVenda(venda: Omit<Venda, 'data' | 'id'> & { id?: stri
     const updated = await vendasRepo.upsert(vendaAtualizada);
     if (!updated) {
       logger.error('[Vendas] Erro ao atualizar venda existente');
+      setLastVendaError('Nao foi possivel atualizar a venda pendente. Tente novamente em alguns segundos.');
       return null;
     }
     
@@ -380,6 +397,7 @@ export async function criarVenda(venda: Omit<Venda, 'data' | 'id'> & { id?: stri
 
   if (!isValidVenda(novaVenda)) {
     logger.error('Venda criada é inválida');
+    setLastVendaError('Os dados da venda ficaram invalidos. Revise os itens, desconto e forma de pagamento.');
     return null;
   }
 
@@ -457,6 +475,7 @@ try {
       totalItens: novaVenda.itens.length,
       timestamp: new Date().toISOString()
     });
+    setLastVendaError('Um ou mais produtos desta venda nao existem mais ou ficaram invalidos. Remova e adicione os itens novamente.');
     return null;
   }
 
@@ -477,6 +496,7 @@ try {
     const produto = getProdutoPorId(prodId);
     if (!produto) {
       logger.error('[Vendas] Produto não encontrado ao validar estoque (inconsistência)', { prodId });
+      setLastVendaError('Um produto desta venda nao foi encontrado. Atualize a lista de produtos e tente novamente.');
       return null;
     }
 
@@ -494,6 +514,7 @@ try {
         deficit: qty - estoqueDisponivel,
         timestamp: new Date().toISOString()
       });
+      setLastVendaError(`Estoque insuficiente para "${produto.nome}". Disponivel: ${estoqueDisponivel}. Ajuste a quantidade ou reponha o estoque.`);
       return null;
     }
 
@@ -544,6 +565,7 @@ try {
 
 } catch (error) {
   logger.error('[Vendas] Erro ao atualizar estoque (venda bloqueada):', error);
+  setLastVendaError('Nao foi possivel atualizar o estoque desta venda. Nenhum item foi confirmado no caixa.');
 
   await rollbackVendaCreation();
   return null;
@@ -561,6 +583,7 @@ try {
       formaPagamento: novaVenda.formaPagamento,
       timestamp: new Date().toISOString()
     });
+    setLastVendaError('A venda nao foi salva localmente. Verifique a loja ativa e tente novamente.');
     await rollbackVendaCreation();
     return null;
   }
@@ -581,6 +604,7 @@ try {
       formaPagamento: saved.formaPagamento,
       timestamp: new Date().toISOString()
     });
+    setLastVendaError('A venda foi cancelada para evitar inconsistencia financeira. Tente novamente e confira o fluxo de caixa.');
     await rollbackVendaCreation(saved.id);
     return null;
   }

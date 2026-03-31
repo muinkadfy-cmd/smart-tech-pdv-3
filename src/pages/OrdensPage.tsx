@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import PatternLock from '@/components/PatternLock';
 import { OrdemServico, StatusOrdem } from '@/types';
-import { getOrdensAsync, criarOrdem, atualizarOrdem, deletarOrdem, ordenarOrdens } from '@/lib/ordens';
+import { getOrdensAsync, criarOrdem, atualizarOrdem, deletarOrdem, getLastOrdemError, ordenarOrdens } from '@/lib/ordens';
 import { getClientes, criarCliente } from '@/lib/clientes';
 import { canCreate, canEdit, canDelete } from '@/lib/permissions';
 import { isReadOnlyMode } from '@/lib/license';
@@ -309,6 +309,8 @@ function OrdensPage() {
     // Escutar eventos customizados (mesma aba)
     window.addEventListener('smart-tech-ordem-criada', atualizarOrdens);
     window.addEventListener('smart-tech-ordem-atualizada', atualizarOrdens);
+    window.addEventListener('smart-tech-ordem-deletada', atualizarOrdens as any);
+    window.addEventListener('smart-tech-backup-restored', atualizarOrdens as any);
     window.addEventListener('smarttech:sqlite-ready', onStoreContextChanged as any);
     window.addEventListener('smarttech:store-changed', onStoreContextChanged as any);
     document.addEventListener('visibilitychange', onVisibility);
@@ -321,6 +323,8 @@ function OrdensPage() {
       window.removeEventListener('storage', atualizarOrdens);
       window.removeEventListener('smart-tech-ordem-criada', atualizarOrdens);
       window.removeEventListener('smart-tech-ordem-atualizada', atualizarOrdens);
+      window.removeEventListener('smart-tech-ordem-deletada', atualizarOrdens as any);
+      window.removeEventListener('smart-tech-backup-restored', atualizarOrdens as any);
       window.removeEventListener('smarttech:sqlite-ready', onStoreContextChanged as any);
       window.removeEventListener('smarttech:store-changed', onStoreContextChanged as any);
       document.removeEventListener('visibilitychange', onVisibility);
@@ -685,7 +689,7 @@ function OrdensPage() {
         if (resultado) {
           showToast(`Ordem ${resultado.numero} atualizada com sucesso!`, 'success');
         } else {
-          showToast('Erro ao atualizar ordem. Verifique os dados e tente novamente.', 'error');
+          showToast(getLastOrdemError() || 'Erro ao atualizar ordem. Revise os dados e tente novamente.', 'error');
           return;
         }
       } else {
@@ -693,7 +697,7 @@ function OrdensPage() {
         if (resultado) {
           showToast(`Ordem ${resultado.numero} criada com sucesso!`, 'success');
         } else {
-          showToast('Erro ao criar ordem. Verifique os dados e tente novamente.', 'error');
+          showToast(getLastOrdemError() || 'Erro ao criar ordem. Revise os dados e tente novamente.', 'error');
           return;
         }
       }

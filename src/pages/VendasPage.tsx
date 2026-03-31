@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Venda, ItemVenda, Produto, FormaPagamento, TipoDesconto } from '@/types';
-import { getVendas, criarVenda, deletarVenda, ordenarVendas } from '@/lib/vendas';
+import { getVendas, criarVenda, deletarVenda, getLastVendaError, ordenarVendas } from '@/lib/vendas';
 import { getProdutosAtivos } from '@/lib/produtos';
 import { getClientes, criarCliente } from '@/lib/clientes';
 import { getUsuario } from '@/lib/usuario';
@@ -249,6 +249,8 @@ function VendasPage() {
 
   const onStorage = () => atualizarVendas();
   const onVendaCriada = () => atualizarVendas();
+  const onVendaDeletada = () => atualizarVendas();
+  const onBackupRestored = () => atualizarVendas();
   const onStoreContextChanged = () => atualizarVendas();
   const onPinnedChanged = () => atualizarPinned();
 
@@ -256,6 +258,8 @@ function VendasPage() {
   window.addEventListener('storage', onStorage);
   // Escutar evento customizado (mesma aba)
   window.addEventListener('smart-tech-venda-criada', onVendaCriada as any);
+  window.addEventListener('smart-tech-venda-deletada', onVendaDeletada as any);
+  window.addEventListener('smart-tech-backup-restored', onBackupRestored as any);
   window.addEventListener('smarttech:sqlite-ready', onStoreContextChanged as any);
   window.addEventListener('smarttech:store-changed', onStoreContextChanged as any);
   // Produtos fixados (mesma aba)
@@ -271,6 +275,8 @@ function VendasPage() {
     cancelado = true;
     window.removeEventListener('storage', onStorage);
     window.removeEventListener('smart-tech-venda-criada', onVendaCriada as any);
+    window.removeEventListener('smart-tech-venda-deletada', onVendaDeletada as any);
+    window.removeEventListener('smart-tech-backup-restored', onBackupRestored as any);
     window.removeEventListener('smarttech:sqlite-ready', onStoreContextChanged as any);
     window.removeEventListener('smarttech:store-changed', onStoreContextChanged as any);
     window.removeEventListener(APP_EVENTS.PINNED_PRODUCTS_CHANGED, onPinnedChanged as any);
@@ -539,8 +545,10 @@ function VendasPage() {
         // Vendas são carregadas automaticamente via useMemo
         limparForm();
       } else {
-        showToast('Erro ao registrar venda. Verifique os dados e tente novamente.', 'error');
+        showToast(getLastVendaError() || 'Erro ao registrar venda. Revise os dados e tente novamente.', 'error');
       }
+    } catch (error: any) {
+      showToast(error?.message || 'Erro inesperado ao registrar venda. Tente novamente.', 'error');
     } finally {
       setSubmitting(false);
     }
