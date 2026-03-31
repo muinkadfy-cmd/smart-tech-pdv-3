@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getDeviceId } from '@/lib/device';
 import { activateFromToken, getLicenseStatus, getLicenseStatusAsync, type LicenseStatus } from '@/lib/license';
 import { isDesktopApp } from '@/lib/platform';
@@ -15,6 +16,9 @@ function buildWhatsappUrl(message: string) {
 }
 
 export default function BuyPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as any)?.from as string | undefined;
   const deviceId = useMemo(() => getDeviceId(), []);
   const [status, setStatus] = useState<LicenseStatus>(() => getLicenseStatus());
   const [busy, setBusy] = useState(false);
@@ -31,6 +35,17 @@ export default function BuyPage() {
       .catch(() => undefined)
       .finally(() => setBusy(false));
   }, []);
+
+  useEffect(() => {
+    if (busy) return;
+    if (status.status !== 'active' && status.status !== 'trial') return;
+
+    const timer = window.setTimeout(() => {
+      navigate(from || '/painel', { replace: true });
+    }, 600);
+
+    return () => window.clearTimeout(timer);
+  }, [busy, status.status, navigate, from]);
 
   const copy = async (value: string) => {
     try {
@@ -221,7 +236,7 @@ export default function BuyPage() {
             ) : (
               <>
                 {status.status === 'active'
-                  ? 'Licenca ativa. Se acabou de ativar e nao liberou, feche e abra o aplicativo.'
+                  ? 'Licenca ativa. Redirecionando para o sistema...'
                   : 'Depois da ativacao, feche e abra o aplicativo para liberar o acesso.'}
               </>
             )}
