@@ -9,7 +9,7 @@ import MiniLineChart from '@/components/charts/MiniLineChart';
 import MiniBarChart from '@/components/charts/MiniBarChart';
 import './painel.css';
 
-type PeriodMode = 'today' | '3days' | 'week' | 'month';
+type PeriodMode = '24h' | '3days' | 'week' | 'month';
 type AnalysisTab = 'servicos' | 'vendas' | 'gastos' | 'saldo';
 
 type PeriodOption = {
@@ -34,7 +34,7 @@ type OperacionalResumo = {
 };
 
 const PERIOD_OPTIONS: PeriodOption[] = [
-  { value: 'today', label: 'Hoje', activeLabel: 'Hoje' },
+  { value: '24h', label: 'Últimas 24h', activeLabel: 'Últimas 24 horas' },
   { value: '3days', label: 'Últimos 3 dias', activeLabel: 'Últimos 3 dias' },
   { value: 'week', label: 'Semanal', activeLabel: 'Esta semana' },
   { value: 'month', label: 'Mensal', activeLabel: 'Este mês' },
@@ -57,8 +57,10 @@ function getStartOfWeek(date: Date): Date {
 function buildPeriodRange(periodMode: PeriodMode): DateRange {
   const now = new Date();
 
-  if (periodMode === 'today') {
-    return { from: startOfDay(now), to: now };
+  if (periodMode === '24h') {
+    const from = new Date(now);
+    from.setHours(from.getHours() - 24);
+    return { from, to: now };
   }
 
   if (periodMode === '3days') {
@@ -149,13 +151,13 @@ function PainelPageNew() {
     return `R$ ${value.toFixed(2).replace('.', ',')}`;
   };
 
-  // Padrão do painel: Hoje, evitando ambiguidade entre “Hoje” e “Últimas 24h”.
-  const [periodMode, setPeriodMode] = useState<PeriodMode>('today');
+  // Padrão do painel: últimas 24 horas, evitando ambiguidade de virada de dia.
+  const [periodMode, setPeriodMode] = useState<PeriodMode>('24h');
   const [analysisTab, setAnalysisTab] = useState<AnalysisTab>('servicos');
 
-  // Ao entrar/voltar na aba do Painel, mantém “Hoje” como recorte padrão.
+  // Ao entrar/voltar na aba do Painel, mantém as últimas 24 horas como recorte padrão.
   useEffect(() => {
-    setPeriodMode((prev) => (prev === 'today' ? prev : 'today'));
+    setPeriodMode((prev) => (prev === '24h' ? prev : '24h'));
   }, [location.key]);
 
   const [movimentacoes, setMovimentacoes] = useState<any[]>([]);
@@ -376,7 +378,7 @@ function PainelPageNew() {
   }, [entradasPorSetor]);
 
   const periodLabel = useMemo(() => {
-    return PERIOD_OPTIONS.find((option) => option.value === periodMode)?.activeLabel || 'Hoje';
+    return PERIOD_OPTIONS.find((option) => option.value === periodMode)?.activeLabel || 'Últimas 24 horas';
   }, [periodMode]);
 
   const updatedLabel = useMemo(() => {
@@ -468,8 +470,8 @@ function PainelPageNew() {
               <div className="kpi-label">O.S. em aberto</div>
               <div className="kpi-value">{resumoOperacional.ordensAbertasNoPeriodo}</div>
               <div className="kpi-helper">
-                {periodMode === 'today'
-                  ? `Abertas hoje. Total em andamento: ${resumoOperacional.ordensAbertasTotal}`
+                {periodMode === '24h'
+                  ? `Abertas nas ultimas 24h. Total em andamento: ${resumoOperacional.ordensAbertasTotal}`
                   : `Abertas no recorte. Total em andamento: ${resumoOperacional.ordensAbertasTotal}`}
               </div>
             </div>
