@@ -27,7 +27,8 @@ type DateRange = {
 
 type OperacionalResumo = {
   vendasRegistradas: number;
-  ordensAbertas: number;
+  ordensAbertasNoPeriodo: number;
+  ordensAbertasTotal: number;
   ordensPagas: number;
   ordensConcluidas: number;
 };
@@ -193,7 +194,12 @@ function PainelPageNew() {
   const resumo = useMemo(() => resumoGerencialFromMovimentacoes(movsPeriodo), [movsPeriodo]);
 
   const resumoOperacional = useMemo<OperacionalResumo>(() => {
-    const ordensAbertas = ordens.filter((ordem) => {
+    const ordensAbertasTotal = ordens.filter((ordem) => {
+      const status = String(ordem.status || '').toLowerCase();
+      return status !== 'concluida' && status !== 'cancelada';
+    }).length;
+
+    const ordensAbertasNoPeriodo = ordensPeriodo.filter((ordem) => {
       const status = String(ordem.status || '').toLowerCase();
       return status !== 'concluida' && status !== 'cancelada';
     }).length;
@@ -203,7 +209,8 @@ function PainelPageNew() {
 
     return {
       vendasRegistradas: vendasPeriodo.length,
-      ordensAbertas,
+      ordensAbertasNoPeriodo,
+      ordensAbertasTotal,
       ordensPagas,
       ordensConcluidas,
     };
@@ -430,6 +437,8 @@ function PainelPageNew() {
           O <strong>Resumo financeiro</strong> considera apenas movimentações consolidadas (Financeiro/Fluxo de Caixa).
           Já o <strong>Resumo operacional</strong> mostra vendas e O.S. cadastradas, mesmo quando ainda não viraram lançamento financeiro.
           <br />
+          <strong>Em aberto no período</strong> considera apenas O.S. abertas dentro do recorte selecionado.
+          <br />
           <strong>Entradas por setor</strong> mostra a origem das entradas (Vendas, O.S., Cobranças).
         </div>
       </details>
@@ -456,9 +465,13 @@ function PainelPageNew() {
               <Icon3D icon="wrench" color="green" size="sm" />
             </div>
             <div className="kpi-meta">
-              <div className="kpi-label">O.S. abertas</div>
-              <div className="kpi-value">{resumoOperacional.ordensAbertas}</div>
-              <div className="kpi-helper">Ordens em andamento no sistema.</div>
+              <div className="kpi-label">O.S. em aberto</div>
+              <div className="kpi-value">{resumoOperacional.ordensAbertasNoPeriodo}</div>
+              <div className="kpi-helper">
+                {periodMode === 'today'
+                  ? `Abertas hoje. Total em andamento: ${resumoOperacional.ordensAbertasTotal}`
+                  : `Abertas no recorte. Total em andamento: ${resumoOperacional.ordensAbertasTotal}`}
+              </div>
             </div>
           </Link>
 
