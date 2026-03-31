@@ -158,9 +158,12 @@ function FluxoCaixaPage() {
 
     window.addEventListener('smart-tech-movimentacao-criada', onCreated as any);
     window.addEventListener('smart-tech-venda-criada', onCreated as any);
+    window.addEventListener('smart-tech-venda-deletada', onCreated as any);
     window.addEventListener('smart-tech-venda-usado-criada', onCreated as any);
     window.addEventListener('smart-tech-ordem-criada', onCreated as any);
+    window.addEventListener('smart-tech-ordem-deletada', onCreated as any);
     window.addEventListener('smart-tech-ordem-atualizada', onCreated as any);
+    window.addEventListener('smart-tech-backup-restored', onCreated as any);
     window.addEventListener('storage', onCreated);
     window.addEventListener('smarttech:sqlite-ready', onCreated as any);
     window.addEventListener('smarttech:store-changed', onCreated as any);
@@ -178,9 +181,12 @@ function FluxoCaixaPage() {
       window.clearTimeout(t);
       window.removeEventListener('smart-tech-movimentacao-criada', onCreated as any);
       window.removeEventListener('smart-tech-venda-criada', onCreated as any);
+      window.removeEventListener('smart-tech-venda-deletada', onCreated as any);
       window.removeEventListener('smart-tech-venda-usado-criada', onCreated as any);
       window.removeEventListener('smart-tech-ordem-criada', onCreated as any);
+      window.removeEventListener('smart-tech-ordem-deletada', onCreated as any);
       window.removeEventListener('smart-tech-ordem-atualizada', onCreated as any);
+      window.removeEventListener('smart-tech-backup-restored', onCreated as any);
       window.removeEventListener('storage', onCreated);
       window.removeEventListener('smarttech:sqlite-ready', onCreated as any);
       window.removeEventListener('smarttech:store-changed', onCreated as any);

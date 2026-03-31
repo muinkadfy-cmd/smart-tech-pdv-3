@@ -1,6 +1,8 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getMovimentacoesAsync, resumoGerencialFromMovimentacoes } from '@/lib/data';
+import { getOrdensAsync } from '@/lib/ordens';
+import { getVendasAsync } from '@/lib/vendas';
 import { toLocalDateKey } from '@/lib/date-local';
 import Icon3D from '@/components/ui/Icon3D';
 import MiniLineChart from '@/components/charts/MiniLineChart';
@@ -21,6 +23,13 @@ type EntradaBucket = 'vendas' | 'ordensServico' | 'cobrancas' | 'ajustes' | null
 type DateRange = {
   from: Date;
   to: Date;
+};
+
+type OperacionalResumo = {
+  vendasRegistradas: number;
+  ordensAbertas: number;
+  ordensPagas: number;
+  ordensConcluidas: number;
 };
 
 const PERIOD_OPTIONS: PeriodOption[] = [
@@ -149,6 +158,8 @@ function PainelPageNew() {
   }, [location.key]);
 
   const [movimentacoes, setMovimentacoes] = useState<any[]>([]);
+  const [ordens, setOrdens] = useState<any[]>([]);
+  const [vendas, setVendas] = useState<any[]>([]);
   const [lastReloadAt, setLastReloadAt] = useState<number | null>(null);
   const reloadSeq = useRef(0);
   const reloadTimerRef = useRef<number | null>(null);
@@ -163,7 +174,40 @@ function PainelPageNew() {
     });
   }, [movimentacoes, periodRange]);
 
+  const ordensPeriodo = useMemo(() => {
+    return ordens.filter((ordem) => {
+      const d = new Date(ordem.dataAbertura || ordem.created_at || ordem.data);
+      if (Number.isNaN(d.getTime())) return false;
+      return d >= periodRange.from && d <= periodRange.to;
+    });
+  }, [ordens, periodRange]);
+
+  const vendasPeriodo = useMemo(() => {
+    return vendas.filter((venda) => {
+      const d = new Date(venda.data || venda.created_at);
+      if (Number.isNaN(d.getTime())) return false;
+      return d >= periodRange.from && d <= periodRange.to;
+    });
+  }, [vendas, periodRange]);
+
   const resumo = useMemo(() => resumoGerencialFromMovimentacoes(movsPeriodo), [movsPeriodo]);
+
+  const resumoOperacional = useMemo<OperacionalResumo>(() => {
+    const ordensAbertas = ordens.filter((ordem) => {
+      const status = String(ordem.status || '').toLowerCase();
+      return status !== 'concluida' && status !== 'cancelada';
+    }).length;
+
+    const ordensPagas = ordensPeriodo.filter((ordem) => String(ordem.status_pagamento || '').toLowerCase() === 'pago').length;
+    const ordensConcluidas = ordensPeriodo.filter((ordem) => String(ordem.status || '').toLowerCase() === 'concluida').length;
+
+    return {
+      vendasRegistradas: vendasPeriodo.length,
+      ordensAbertas,
+      ordensPagas,
+      ordensConcluidas,
+    };
+  }, [ordens, ordensPeriodo, vendasPeriodo]);
 
   const entradasPorSetor = useMemo(() => {
     let vendas = 0;
@@ -188,13 +232,21 @@ function PainelPageNew() {
   const reload = useCallback(async () => {
     const seq = ++reloadSeq.current;
     try {
-      const movs = await getMovimentacoesAsync();
+      const [movs, ordensLista, vendasLista] = await Promise.all([
+        getMovimentacoesAsync(),
+        getOrdensAsync(),
+        getVendasAsync(),
+      ]);
       if (seq !== reloadSeq.current) return;
       setMovimentacoes(movs);
+      setOrdens(ordensLista);
+      setVendas(vendasLista);
       setLastReloadAt(Date.now());
     } catch {
       if (seq !== reloadSeq.current) return;
       setMovimentacoes([]);
+      setOrdens([]);
+      setVendas([]);
       setLastReloadAt(Date.now());
     }
   }, []);
@@ -226,10 +278,13 @@ function PainelPageNew() {
 
     window.addEventListener('storage', atualizarPainel);
     window.addEventListener('smart-tech-venda-criada', atualizarPainel as any);
+    window.addEventListener('smart-tech-venda-deletada', atualizarPainel as any);
     window.addEventListener('smart-tech-venda-usado-criada', atualizarPainel as any);
     window.addEventListener('smart-tech-movimentacao-criada', atualizarPainel as any);
     window.addEventListener('smart-tech-ordem-criada', atualizarPainel as any);
+    window.addEventListener('smart-tech-ordem-deletada', atualizarPainel as any);
     window.addEventListener('smart-tech-ordem-atualizada', atualizarPainel as any);
+    window.addEventListener('smart-tech-backup-restored', atualizarPainel as any);
     window.addEventListener('smarttech:sqlite-ready', atualizarPainel as any);
     window.addEventListener('smarttech:store-changed', atualizarPainel as any);
     document.addEventListener('visibilitychange', onVisible);
@@ -248,10 +303,13 @@ function PainelPageNew() {
       }
       window.removeEventListener('storage', atualizarPainel);
       window.removeEventListener('smart-tech-venda-criada', atualizarPainel as any);
+      window.removeEventListener('smart-tech-venda-deletada', atualizarPainel as any);
       window.removeEventListener('smart-tech-venda-usado-criada', atualizarPainel as any);
       window.removeEventListener('smart-tech-movimentacao-criada', atualizarPainel as any);
       window.removeEventListener('smart-tech-ordem-criada', atualizarPainel as any);
+      window.removeEventListener('smart-tech-ordem-deletada', atualizarPainel as any);
       window.removeEventListener('smart-tech-ordem-atualizada', atualizarPainel as any);
+      window.removeEventListener('smart-tech-backup-restored', atualizarPainel as any);
       window.removeEventListener('smarttech:sqlite-ready', atualizarPainel as any);
       window.removeEventListener('smarttech:store-changed', atualizarPainel as any);
       document.removeEventListener('visibilitychange', onVisible);
@@ -356,12 +414,12 @@ function PainelPageNew() {
           <div className="panel-glance-card">
             <span className="panel-glance-label">Movimentações no período</span>
             <strong className="panel-glance-value">{movsPeriodo.length}</strong>
-            <span className="panel-glance-helper">Serviços, vendas, cobranças e ajustes consolidados.</span>
+            <span className="panel-glance-helper">Somente lançamentos financeiros consolidados entram aqui.</span>
           </div>
           <div className="panel-glance-card">
             <span className="panel-glance-label">Última atualização</span>
             <strong className="panel-glance-value">{updatedLabel}</strong>
-            <span className="panel-glance-helper">Sincronizado com o fechamento e reabertura das telas.</span>
+            <span className="panel-glance-helper">Atualiza com criação, edição, exclusão, restore e troca de loja.</span>
           </div>
         </div>
       </section>
@@ -370,9 +428,63 @@ function PainelPageNew() {
         <summary>Como é calculado</summary>
         <div className="calc-details-body">
           O <strong>Resumo financeiro</strong> considera apenas movimentações consolidadas (Financeiro/Fluxo de Caixa).
-          Já <strong>Entradas por setor</strong> mostra a origem das entradas (Vendas, O.S., Cobranças).
+          Já o <strong>Resumo operacional</strong> mostra vendas e O.S. cadastradas, mesmo quando ainda não viraram lançamento financeiro.
+          <br />
+          <strong>Entradas por setor</strong> mostra a origem das entradas (Vendas, O.S., Cobranças).
         </div>
       </details>
+
+      <section className="panel-section">
+        <div className="panel-section-heading">
+          <h2>Resumo operacional</h2>
+          <span>Cadastros e andamento do período, sem depender só do financeiro.</span>
+        </div>
+        <div className="kpi-grid kpi-grid--4">
+          <Link to="/vendas" className="kpi-card tone-blue">
+            <div className="kpi-icon">
+              <Icon3D icon="shopping" color="blue" size="sm" />
+            </div>
+            <div className="kpi-meta">
+              <div className="kpi-label">Vendas registradas</div>
+              <div className="kpi-value">{resumoOperacional.vendasRegistradas}</div>
+              <div className="kpi-helper">Quantidade operacional no período.</div>
+            </div>
+          </Link>
+
+          <Link to="/ordens" className="kpi-card tone-emerald">
+            <div className="kpi-icon">
+              <Icon3D icon="wrench" color="green" size="sm" />
+            </div>
+            <div className="kpi-meta">
+              <div className="kpi-label">O.S. abertas</div>
+              <div className="kpi-value">{resumoOperacional.ordensAbertas}</div>
+              <div className="kpi-helper">Ordens em andamento no sistema.</div>
+            </div>
+          </Link>
+
+          <Link to="/ordens" className="kpi-card tone-emerald">
+            <div className="kpi-icon">
+              <Icon3D icon="check-circle" color="green" size="sm" />
+            </div>
+            <div className="kpi-meta">
+              <div className="kpi-label">O.S. pagas</div>
+              <div className="kpi-value">{resumoOperacional.ordensPagas}</div>
+              <div className="kpi-helper">Ordens pagas no recorte atual.</div>
+            </div>
+          </Link>
+
+          <Link to="/ordens" className="kpi-card tone-violet">
+            <div className="kpi-icon">
+              <Icon3D icon="sparkles" color="purple" size="sm" />
+            </div>
+            <div className="kpi-meta">
+              <div className="kpi-label">O.S. concluídas</div>
+              <div className="kpi-value">{resumoOperacional.ordensConcluidas}</div>
+              <div className="kpi-helper">Concluídas no período selecionado.</div>
+            </div>
+          </Link>
+        </div>
+      </section>
 
       {resumo.saldoDiario < 0 && (
         <div className="alert-negative">⚠️ ATENÇÃO: Saldo negativo! Verifique saídas não registradas.</div>

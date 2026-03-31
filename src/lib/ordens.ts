@@ -447,6 +447,13 @@ export async function deletarOrdem(id: string): Promise<boolean> {
   
   if (deleted) {
     logger.log(`[Ordens] Ordem deletada: ${id}`);
+    try {
+      window.dispatchEvent(new CustomEvent('smart-tech-ordem-deletada', { detail: { ordemId: id } }));
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'smart-tech-ordens-updated',
+        newValue: Date.now().toString()
+      }));
+    } catch {}
   }
   
   return deleted;

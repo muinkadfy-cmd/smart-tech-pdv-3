@@ -31,6 +31,11 @@ export function getVendas(): Venda[] {
   return filterValid(items, isValidVenda);
 }
 
+export async function getVendasAsync(): Promise<Venda[]> {
+  const items = await vendasRepo.listAsync();
+  return filterValid(items, isValidVenda);
+}
+
 
 export function toSupabaseVendaPayload(v: Venda) {
   const normalized = normalizarVenda(v);
