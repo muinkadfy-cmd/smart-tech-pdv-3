@@ -176,6 +176,72 @@
   margin-top: var(--spacing-md);
 }
 
+.diagnostico-integridade {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-light);
+  background: var(--bg-surface);
+}
+
+.diagnostico-integridade.ok {
+  border-left: 4px solid var(--success);
+}
+
+.diagnostico-integridade.warning {
+  border-left: 4px solid var(--warning);
+}
+
+.integridade-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.integridade-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+}
+
+.integridade-card strong {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.integridade-card span {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-bold);
+}
+
+.integridade-card.error span {
+  color: var(--error);
+}
+
+.integridade-status {
+  margin: var(--spacing-md) 0 0;
+  color: var(--text-primary);
+}
+
+.integridade-details {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+}
+
+.integridade-details p {
+  margin: var(--spacing-xs) 0;
+  color: var(--text-secondary);
+}
+
 @media (max-width: 768px) {
   .diagnostico-info {
     flex-direction: column;

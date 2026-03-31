@@ -44,6 +44,7 @@ import { saveBlobToDesktopAppData, saveBlobWithDialog } from '@/lib/capabilities
 import { getCurrentSession } from './auth-supabase';
 import { fetchCompany, upsertCompany } from './company-service';
 import { forceValidateLicense } from './license-service';
+import { reconcileFinancialMirrors } from './finance/reconciliation';
 
 // Hardening: rawStorage do backup é dado não confiável (pode vir de arquivo externo).
 // Permitimos apenas chaves do tenant no formato smarttech:<STORE_ID>:*
@@ -1448,6 +1449,12 @@ export async function restoreBackup(backup: BackupData, confirmOverwrite: boolea
 
     // P9: checkpoint imediato após restore (garante WAL limpo e melhora estabilidade)
     try { await forceSqliteCheckpoint('after-restore'); } catch { /* ignore */ }
+
+    try {
+      await reconcileFinancialMirrors('backup-restore');
+    } catch (error) {
+      logger.warn('[Backup] Não foi possível reconciliar espelhos financeiros após o restore:', error);
+    }
 
     if (!isDesktopApp()) {
       try {

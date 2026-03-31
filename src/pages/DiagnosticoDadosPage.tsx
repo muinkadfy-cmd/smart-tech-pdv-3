@@ -33,6 +33,7 @@ import { gerarRecibo } from '@/lib/recibos';
 import { getDiagnosticsEnabled } from '@/lib/diagnostics';
 import { isBrowserOnlineSafe } from '@/lib/capabilities/runtime-remote-adapter';
 import { getRuntimeStoreId } from '@/lib/runtime-context';
+import { repairFinancialIntegrity, runFinancialIntegrityAudit, type FinancialIntegrityAuditReport } from '@/lib/finance/integrity-audit';
 import './DiagnosticoDadosPage.css';
 
 const TEST_MARKER = '[TESTE_PERSIST]';
@@ -56,6 +57,7 @@ function DiagnosticoDadosPage() {
     locaisFaltandoRemoto: string[];
     exemploPayload?: any;
   } | null>(null);
+  const [integrityReport, setIntegrityReport] = useState<FinancialIntegrityAuditReport | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -209,6 +211,44 @@ function DiagnosticoDadosPage() {
     }
     
     setStats(entidades);
+  };
+
+  const handleAuditarIntegridadeFinanceira = async () => {
+    setLoading(true);
+    try {
+      const report = await runFinancialIntegrityAudit();
+      setIntegrityReport(report);
+      showToast(
+        report.panelFinanceFluxConsistent
+          ? 'Auditoria financeira sem inconsistências.'
+          : 'Auditoria financeira encontrou inconsistências.',
+        report.panelFinanceFluxConsistent ? 'success' : 'warning'
+      );
+    } catch (error: any) {
+      logger.error('Erro ao auditar integridade financeira:', error);
+      showToast('Erro ao auditar integridade financeira', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRepararIntegridadeFinanceira = async () => {
+    setLoading(true);
+    try {
+      const result = await repairFinancialIntegrity('diagnostico-dados');
+      setIntegrityReport(result.report);
+      showToast(
+        `Reconciliação concluída: ${result.reconcile.repairedVendas + result.reconcile.repairedOrdens + result.reconcile.repairedUsados} espelhos reparados`,
+        'success'
+      );
+      setRefreshKey(prev => prev + 1);
+      await carregarStats();
+    } catch (error: any) {
+      logger.error('Erro ao reparar integridade financeira:', error);
+      showToast('Erro ao reparar integridade financeira', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCriarTeste = async () => {
@@ -527,6 +567,20 @@ function DiagnosticoDadosPage() {
         </button>
         <button
           className="btn-secondary"
+          onClick={handleAuditarIntegridadeFinanceira}
+          disabled={loading}
+        >
+          🧪 Auditar Integridade Financeira
+        </button>
+        <button
+          className="btn-secondary"
+          onClick={handleRepararIntegridadeFinanceira}
+          disabled={loading}
+        >
+          🛠️ Reparar Integridade Financeira
+        </button>
+        <button
+          className="btn-secondary"
           onClick={handleForcarSyncCompleto}
           disabled={loading || !isOnline || !isSupabase}
         >
@@ -547,6 +601,74 @@ function DiagnosticoDadosPage() {
           🗑️ Limpar Dados [TESTE_PERSIST]
         </button>
       </div>
+
+      {integrityReport && (
+        <div className={`diagnostico-integridade ${integrityReport.panelFinanceFluxConsistent ? 'ok' : 'warning'}`}>
+          <h2>Auditoria de Integridade Financeira</h2>
+          <div className="integridade-grid">
+            <div className="integridade-card">
+              <strong>Vendas pagas auditadas</strong>
+              <span>{integrityReport.paidVendasChecked}</span>
+            </div>
+            <div className="integridade-card">
+              <strong>O.S. pagas auditadas</strong>
+              <span>{integrityReport.paidOrdensChecked}</span>
+            </div>
+            <div className="integridade-card">
+              <strong>Vendas de usados auditadas</strong>
+              <span>{integrityReport.usedSalesChecked}</span>
+            </div>
+            <div className="integridade-card">
+              <strong>Movimentações relevantes</strong>
+              <span>{integrityReport.totalRelevantMovements}</span>
+            </div>
+            <div className="integridade-card error">
+              <strong>Vendas pagas sem movimentação</strong>
+              <span>{integrityReport.missingVendaMirrors}</span>
+            </div>
+            <div className="integridade-card error">
+              <strong>O.S. pagas sem movimentação</strong>
+              <span>{integrityReport.missingOrdemMirrors}</span>
+            </div>
+            <div className="integridade-card error">
+              <strong>Usados sem movimentação</strong>
+              <span>{integrityReport.missingUsadoMirrors}</span>
+            </div>
+            <div className="integridade-card error">
+              <strong>Órfãos financeiros</strong>
+              <span>
+                {integrityReport.orphanVendaMovements + integrityReport.orphanOrdemMovements + integrityReport.orphanUsadoMovements}
+              </span>
+            </div>
+          </div>
+          <p className="integridade-status">
+            {integrityReport.panelFinanceFluxConsistent
+              ? 'Painel, Financeiro e Fluxo estao coerentes com a base financeira.'
+              : 'Existem inconsistencias entre a base operacional e as movimentacoes financeiras.'}
+          </p>
+          <div className="integridade-details">
+            {integrityReport.ids.missingVendaIds.length > 0 && (
+              <p><strong>Vendas sem espelho:</strong> {integrityReport.ids.missingVendaIds.slice(0, 5).join(', ')}{integrityReport.ids.missingVendaIds.length > 5 ? ` ... (+${integrityReport.ids.missingVendaIds.length - 5})` : ''}</p>
+            )}
+            {integrityReport.ids.missingOrdemIds.length > 0 && (
+              <p><strong>O.S. sem espelho:</strong> {integrityReport.ids.missingOrdemIds.slice(0, 5).join(', ')}{integrityReport.ids.missingOrdemIds.length > 5 ? ` ... (+${integrityReport.ids.missingOrdemIds.length - 5})` : ''}</p>
+            )}
+            {integrityReport.ids.missingUsadoIds.length > 0 && (
+              <p><strong>Usados sem espelho:</strong> {integrityReport.ids.missingUsadoIds.slice(0, 5).join(', ')}{integrityReport.ids.missingUsadoIds.length > 5 ? ` ... (+${integrityReport.ids.missingUsadoIds.length - 5})` : ''}</p>
+            )}
+            {(integrityReport.ids.orphanVendaMovementIds.length + integrityReport.ids.orphanOrdemMovementIds.length + integrityReport.ids.orphanUsadoMovementIds.length) > 0 && (
+              <p>
+                <strong>Movimentacoes orfas:</strong>{' '}
+                {[
+                  ...integrityReport.ids.orphanVendaMovementIds,
+                  ...integrityReport.ids.orphanOrdemMovementIds,
+                  ...integrityReport.ids.orphanUsadoMovementIds,
+                ].slice(0, 5).join(', ')}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="diagnostico-stats">
         <h2>Estatísticas por Entidade</h2>
