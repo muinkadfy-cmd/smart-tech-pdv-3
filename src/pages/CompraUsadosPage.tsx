@@ -877,15 +877,6 @@ function CompraUsadosPage() {
                   
                   {/* Botões */}
                   <div className="usados-stock-actions">
-                    {numFotos > 0 && (
-                      <button
-                        type="button"
-                        className="btn-ver-fotos usados-action-button"
-                        onClick={() => abrirGaleria(u)}
-                      >
-                        Fotos ({numFotos})
-                      </button>
-                    )}
                     {primeiraFotoArquivo && (
                       <div className="usados-stock-file-row">
                         <button
@@ -905,15 +896,6 @@ function CompraUsadosPage() {
                           Baixar foto
                         </button>
                       </div>
-                    )}
-                    {numDocs > 0 && (
-                      <button
-                        type="button"
-                        className="btn-ver-docs usados-action-button"
-                        onClick={() => abrirDocumentos(u)}
-                      >
-                        Documentos ({numDocs})
-                      </button>
                     )}
                     {primeiroDocumentoArquivo && (
                       <div className="usados-stock-file-row">
