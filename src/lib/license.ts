@@ -16,7 +16,7 @@ import { isDesktopApp } from './platform';
 import { kvGet, kvSet, kvRemove } from './desktop-kv';
 import { getDeviceId } from './device';
 import { isLicenseEnabled, isLicenseMandatory } from './mode';
-import { isRemoteRuntimeConfigured } from '@/lib/capabilities/runtime-remote-adapter';
+import { isLicenseRemoteConfigured } from '@/lib/capabilities/license-remote-adapter';
 import { validateLicenseFromServer } from '@/lib/license-service';
 
 export type LicensePayload = {
@@ -431,7 +431,7 @@ function writeCachedStatus(status: LicenseStatus): void {
 }
 
 function shouldUseRemoteLicenseAuthority(): boolean {
-  return !isDesktopApp() && isRemoteRuntimeConfigured();
+  return isLicenseRemoteConfigured();
 }
 
 function readRemoteGuardStatus(): LicenseStatus | null {

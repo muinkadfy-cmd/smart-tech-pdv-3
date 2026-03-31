@@ -8,14 +8,13 @@ import { safeGet, safeSet } from './storage';
 import { logger } from '@/utils/logger';
 import {
   fetchLatestRemoteLicenseByStore,
+  isLicenseRemoteConfigured,
   insertRemoteLicense,
   resolveLicenseStoreId,
   updateRemoteLicenseByStore
 } from '@/lib/capabilities/license-remote-adapter';
 import {
-  canAttemptRemoteRequest,
   isBrowserOnlineSafe,
-  isRemoteRuntimeConfigured
 } from '@/lib/capabilities/runtime-remote-adapter';
 
 /**
@@ -70,7 +69,7 @@ export async function fetchLicenseFromSupabase(): Promise<LicenseData | null> {
     return null;
   }
 
-  if (!isRemoteRuntimeConfigured()) {
+  if (!isLicenseRemoteConfigured()) {
     if (import.meta.env.DEV) {
       logger.log('[LicenseService] ⚠️ Supabase não configurado, usando cache local');
     }
@@ -241,7 +240,7 @@ export async function validateLicenseFromServer(): Promise<LicenseStatus> {
   }
 
   // Tentar buscar do Supabase (se online)
-  const isOnline = canAttemptRemoteRequest();
+  const isOnline = isBrowserOnlineSafe() && isLicenseRemoteConfigured();
   
   if (isOnline) {
     const license = await fetchLicenseFromSupabase();
@@ -436,7 +435,7 @@ export async function activateTrialLicense(): Promise<{ success: boolean; error?
     };
   }
 
-  if (!isRemoteRuntimeConfigured()) {
+  if (!isLicenseRemoteConfigured()) {
     return {
       success: false,
       error: 'Supabase não configurado. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.'
@@ -523,7 +522,7 @@ export async function activateLifetimeLicense(): Promise<{ success: boolean; err
     };
   }
 
-  if (!isRemoteRuntimeConfigured()) {
+  if (!isLicenseRemoteConfigured()) {
     return {
       success: false,
       error: 'Supabase não configurado. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.'
@@ -609,7 +608,7 @@ export async function deactivateLicense(): Promise<{ success: boolean; error?: s
     };
   }
 
-  if (!isRemoteRuntimeConfigured()) {
+  if (!isLicenseRemoteConfigured()) {
     return {
       success: false,
       error: 'Supabase não configurado. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para remover a licença.'
@@ -666,7 +665,7 @@ export async function activateLicenseInSupabase(
     };
   }
 
-  if (!isRemoteRuntimeConfigured()) {
+  if (!isLicenseRemoteConfigured()) {
     return {
       success: false,
       error: 'Supabase não configurado. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.'
