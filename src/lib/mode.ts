@@ -10,7 +10,7 @@
  */
 
 import { isDesktopApp } from "./platform";
-import { isBrowserOnlineSafe } from '@/lib/capabilities/runtime-remote-adapter';
+import { isBrowserOnlineSafe, isRemoteRuntimeConfigured } from '@/lib/capabilities/runtime-remote-adapter';
 
 const LS_KEY = 'smart-tech:local-only';
 
@@ -103,6 +103,9 @@ export function isUpdateEnabled(): boolean {
 
 /** Licença remota: OFF por padrão (pode ser habilitada no futuro). */
 export function isLicenseEnabled(): boolean {
+  if (!isDesktopApp() && isRemoteRuntimeConfigured()) {
+    return true;
+  }
   const f = readFlags();
   return f.license === true || isLicenseMandatory();
 }

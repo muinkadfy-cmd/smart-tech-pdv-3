@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { getDeviceId } from '@/lib/device';
 import { isLicenseEnabled, isLicenseMandatory, setFeatureFlag } from '@/lib/mode';
 import {
@@ -36,6 +37,8 @@ function statusColor(s: LicenseStatus['status']) {
 }
 
 export default function LicensePage() {
+  const { session } = useAuth();
+  const isRealSuperAdmin = session?.isSuperAdmin === true;
   const deviceId = useMemo(() => getDeviceId(), []);
   const mandatory = useMemo(() => isLicenseMandatory(), []);
   const [enabled, setEnabled] = useState(isLicenseEnabled());
@@ -178,37 +181,46 @@ const onFileSelected = async (file: File | null) => {
         </div>
 
         <div className="license-details">
-          <div className="license-detail-item">
-            <strong>Machine ID</strong>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <input
-                id="deviceIdInput"
-                value={deviceId}
-                readOnly
-                style={{ width: '360px', maxWidth: '65vw' }}
-              />
-              <button className="btn btn-secondary" onClick={copyDeviceId}>
-                Copiar
-              </button>
-            </div>
-          </div>
+          {isRealSuperAdmin ? (
+            <>
+              <div className="license-detail-item">
+                <strong>Machine ID</strong>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    id="deviceIdInput"
+                    value={deviceId}
+                    readOnly
+                    style={{ width: '360px', maxWidth: '65vw' }}
+                  />
+                  <button className="btn btn-secondary" onClick={copyDeviceId}>
+                    Copiar
+                  </button>
+                </div>
+              </div>
 
-          <div className="license-detail-item">
-            <strong>Bloqueio por licença</strong>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <span style={{ color: enabled ? 'var(--success, #10b981)' : 'var(--text-secondary)' }}>
-                {mandatory ? 'OBRIGATÓRIO' : (enabled ? 'ATIVO' : 'DESATIVADO')}
-              </span>
-              <button
-                className="btn btn-secondary"
-                onClick={onToggleEnabled}
-                disabled={!canManage || mandatory}
-                title={mandatory ? 'Neste build a licença é obrigatória' : (!canManage ? 'Apenas admin pode alterar' : undefined)}
-              >
-                {mandatory ? 'Obrigatório' : (enabled ? 'Desativar' : 'Ativar')}
-              </button>
+              <div className="license-detail-item">
+                <strong>Bloqueio por licença</strong>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <span style={{ color: enabled ? 'var(--success, #10b981)' : 'var(--text-secondary)' }}>
+                    {mandatory ? 'OBRIGATÓRIO' : (enabled ? 'ATIVO' : 'DESATIVADO')}
+                  </span>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={onToggleEnabled}
+                    disabled={!canManage || mandatory}
+                    title={mandatory ? 'Neste build a licença é obrigatória' : (!canManage ? 'Apenas admin pode alterar' : undefined)}
+                  >
+                    {mandatory ? 'Obrigatório' : (enabled ? 'Desativar' : 'Ativar')}
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="license-detail-item">
+              <strong>Status comercial</strong>
+              <span>{status.status === 'trial' ? 'Teste ativo' : status.status === 'active' ? 'Liberado' : 'Ativacao necessaria'}</span>
             </div>
-          </div>
+          )}
 
           {status.validUntil && (
             <div className="license-detail-item">
@@ -224,14 +236,14 @@ const onFileSelected = async (file: File | null) => {
             </div>
           )}
 
-          {status.payload?.licenseId && (
+          {isRealSuperAdmin && status.payload?.licenseId && (
             <div className="license-detail-item">
               <strong>ID da licença</strong>
               <span>{status.payload.licenseId}</span>
             </div>
           )}
 
-          {status.payload?.plan && (
+          {isRealSuperAdmin && status.payload?.plan && (
             <div className="license-detail-item">
               <strong>Plano</strong>
               <span>{status.payload.plan}</span>
@@ -241,13 +253,24 @@ const onFileSelected = async (file: File | null) => {
 
         {(status.status !== 'active' && status.status !== 'trial' || enabled) && (
           <div className="license-warning">
-            <p><strong>Como ativar:</strong></p>
-            <p>1) Copie o <b>Machine ID</b> e envie no WhatsApp <b>(43) 99669-4751</b>.</p>
-            <p>2) A ativacao libera vendas, ordem de servico, financeiro, backup e operacao da loja.</p>
-            <p>3) Receba o token, cole abaixo e clique em <b>Ativar licenca</b>.</p>
+            <p><strong>{isRealSuperAdmin ? 'Como ativar:' : 'Como liberar sua loja:'}</strong></p>
+            {isRealSuperAdmin ? (
+              <>
+                <p>1) Copie o <b>Machine ID</b> e envie no WhatsApp <b>(43) 99669-4751</b>.</p>
+                <p>2) A ativacao libera vendas, ordem de servico, financeiro, backup e operacao da loja.</p>
+                <p>3) Receba o token, cole abaixo e clique em <b>Ativar licenca</b>.</p>
+              </>
+            ) : (
+              <>
+                <p>1) Entre em contato no WhatsApp <b>(43) 99669-4751</b> para liberar sua loja.</p>
+                <p>2) A ativacao libera vendas, ordem de servico, financeiro, backup e suporte.</p>
+                <p>3) Se seu teste expirou, a liberacao e feita pela conta principal sem voce lidar com token tecnico.</p>
+              </>
+            )}
           </div>
         )}
 
+        {isRealSuperAdmin && (
         <div className="license-form">
           <div className="form-group">
             <label>Token da Licença</label>
@@ -289,14 +312,17 @@ const onFileSelected = async (file: File | null) => {
             </button>
           </div>
         </div>
+        )}
       </div>
 
       <div className="license-info">
-        <h3>Vantagens do sistema</h3>
+        <h3>{isRealSuperAdmin ? 'Vantagens do sistema' : 'Sua loja fica protegida com'}</h3>
         <ul>
           <li>Gestao completa de <b>vendas, ordem de servico, estoque, financeiro e recibos</b> em um so lugar.</li>
           <li>Operacao por <b>loja identificada por store_id</b>, ajudando a evitar mistura de dados entre clientes.</li>
           <li>Fluxo com <b>backup, suporte e ativacao comercial</b> para manter a operacao segura.</li>
+          {!isRealSuperAdmin && <li>Teste inicial com prazo visivel e liberacao comercial sem complicacao tecnica para a loja.</li>}
+          {!isRealSuperAdmin && <li>Atendimento para ativacao e suporte no WhatsApp <b>(43) 99669-4751</b>.</li>}
         </ul>
       </div>
     </div>

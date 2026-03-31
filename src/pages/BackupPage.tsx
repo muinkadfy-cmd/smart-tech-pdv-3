@@ -274,14 +274,14 @@ function BackupPage() {
         const restoredTarget = files.totalExpected || files.totalManifest;
         if (restoredTarget > 0) {
           showToast(
-            `Anexos do ZIP restaurados: ${files.restored}/${restoredTarget}`,
+            `Anexos do ZIP restaurados: ${files.restored}/${restoredTarget}. Os arquivos locais serao enviados ao Supabase quando houver conexao.`,
             files.restored === restoredTarget && attachmentWarnings.length === 0 ? 'success' : 'warning',
-            6000,
+            7000,
           );
         }
       } catch {
-        attachmentWarnings = ['Dados restaurados, mas falha ao restaurar anexos do ZIP.'];
-        showToast('Dados restaurados, mas falha ao restaurar anexos do ZIP.', 'warning', 7000);
+        attachmentWarnings = ['Dados restaurados, mas falha ao restaurar anexos do ZIP neste dispositivo.'];
+        showToast('Dados restaurados, mas os anexos do ZIP nao puderam ser recuperados neste dispositivo.', 'warning', 7000);
       }
     }
 
@@ -290,9 +290,9 @@ function BackupPage() {
     if (result.success) {
       const combinedWarnings = [...(result.warnings || []), ...attachmentWarnings];
       if (combinedWarnings.length) {
-        showToast(`Backup restaurado com alertas: ${combinedWarnings[0]}`, 'warning', 8000);
+        showToast(`Backup restaurado com alertas: ${combinedWarnings[0]}`, 'warning', 8500);
       } else {
-        showToast('Backup restaurado com sucesso!', 'success');
+        showToast('Backup restaurado com sucesso! Se houver anexos locais, eles serao promovidos ao Supabase quando a sincronizacao concluir.', 'success', 7000);
       }
       resetRestoreState();
       setTimeout(() => {

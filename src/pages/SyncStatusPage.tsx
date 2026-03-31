@@ -5,11 +5,33 @@ import { showToast } from '@/components/ui/ToastContainer';
 import { APP_EVENTS } from '@/lib/app-events';
 import './SyncStatusPage.css';
 
+const SYNC_CONFLICTS_STORAGE_KEY = 'smart-tech:sync-conflicts';
+
+type SyncConflictRecord = {
+  key: string;
+  table: string;
+  id: string;
+  localUpdatedAt: string | null;
+  remoteUpdatedAt: string | null;
+  detectedAt: string;
+};
+
+function getStoredSyncConflicts(): SyncConflictRecord[] {
+  try {
+    const raw = localStorage.getItem(SYNC_CONFLICTS_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) as SyncConflictRecord[] : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 function SyncStatusPage() {
   const [stats, setStats] = useState(getOutboxStats());
   const [syncStatus, setSyncStatus] = useState(getSyncStatus());
   const [pendingItems, setPendingItems] = useState(getPendingOutboxItems());
   const [failedItems, setFailedItems] = useState(getFailedOutboxItems());
+  const [conflicts, setConflicts] = useState<SyncConflictRecord[]>(getStoredSyncConflicts());
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(
     localStorage.getItem('smart-tech-last-sync') || null
@@ -21,6 +43,7 @@ function SyncStatusPage() {
       setSyncStatus(getSyncStatus());
       setPendingItems(getPendingOutboxItems());
       setFailedItems(getFailedOutboxItems());
+      setConflicts(getStoredSyncConflicts());
     };
 
     updateAll();
@@ -30,12 +53,14 @@ function SyncStatusPage() {
 
     window.addEventListener(APP_EVENTS.OUTBOX_CHANGED, handleOutboxChanged as any);
     window.addEventListener(APP_EVENTS.SYNC_STATUS_CHANGED, handleOutboxChanged as any);
+    window.addEventListener(APP_EVENTS.SYNC_CONFLICT_DETECTED, handleOutboxChanged as any);
     window.addEventListener('online', handleSyncStatus);
     window.addEventListener('offline', handleSyncStatus);
 
     return () => {
       window.removeEventListener(APP_EVENTS.OUTBOX_CHANGED, handleOutboxChanged as any);
       window.removeEventListener(APP_EVENTS.SYNC_STATUS_CHANGED, handleOutboxChanged as any);
+      window.removeEventListener(APP_EVENTS.SYNC_CONFLICT_DETECTED, handleOutboxChanged as any);
       window.removeEventListener('online', handleSyncStatus);
       window.removeEventListener('offline', handleSyncStatus);
     };
@@ -151,6 +176,27 @@ function SyncStatusPage() {
         <h3>📅 Última Sincronização</h3>
         <p>{formatDate(lastSync)}</p>
       </div>
+
+      {conflicts.length > 0 && (
+        <div className="failed-section">
+          <h3>⚠️ Conflitos Recentes ({conflicts.length})</h3>
+          <div className="items-list">
+            {conflicts.slice(0, 10).map(item => (
+              <div key={item.key} className="outbox-item error">
+                <span className="item-operation">⚠️</span>
+                <div className="item-info">
+                  <strong>{item.table}</strong>
+                  <span className="item-id">ID: {item.id.substring(0, 8)}...</span>
+                  <span className="item-error">
+                    Local pendente e remoto atualizado ao mesmo tempo. Mantida a versão local até a próxima sincronização.
+                  </span>
+                </div>
+                <span className="item-retries">{formatDate(item.detectedAt)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Ações */}
       <div className="sync-actions">

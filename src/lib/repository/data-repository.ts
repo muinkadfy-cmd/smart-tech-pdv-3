@@ -12,6 +12,7 @@ import { isLocalOnly } from '@/lib/mode';
 import { isDesktopApp } from '@/lib/platform';
 import { scheduleSqliteCheckpoint } from '@/lib/sqlite-maintenance';
 import { getRepositoryRuntimeProfile, resolveRepositoryOptions } from './runtime-profile';
+import { APP_EVENTS, emitAppEvent } from '@/lib/app-events';
 
 
 declare const __SMARTTECH_DESKTOP__: boolean;
@@ -21,6 +22,56 @@ type RemoteStoreLike<T extends { id: string }> = {
   upsert(item: T): Promise<{ data: T | null; error: any }>;
   remove(id: string): Promise<{ success: boolean; error: any }>;
 };
+
+const SYNC_CONFLICTS_STORAGE_KEY = 'smart-tech:sync-conflicts';
+const recentConflictMap = new Map<string, number>();
+const CONFLICT_DEDUPE_WINDOW_MS = 60_000;
+
+type SyncConflictRecord = {
+  key: string;
+  table: string;
+  id: string;
+  localUpdatedAt: string | null;
+  remoteUpdatedAt: string | null;
+  detectedAt: string;
+};
+
+function persistSyncConflict(record: SyncConflictRecord): void {
+  try {
+    if (typeof window === 'undefined') return;
+    const raw = window.localStorage.getItem(SYNC_CONFLICTS_STORAGE_KEY);
+    const current = raw ? JSON.parse(raw) as SyncConflictRecord[] : [];
+    const filtered = current.filter((item) => item.key !== record.key);
+    const next = [record, ...filtered].slice(0, 20);
+    window.localStorage.setItem(SYNC_CONFLICTS_STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // ignore
+  }
+}
+
+function notifySyncConflict(table: string, id: string, localUpdatedAt?: string | null, remoteUpdatedAt?: string | null): void {
+  try {
+    if (typeof window === 'undefined') return;
+    const key = `${table}:${id}`;
+    const now = Date.now();
+    const lastTs = recentConflictMap.get(key) ?? 0;
+    if (now - lastTs < CONFLICT_DEDUPE_WINDOW_MS) return;
+    recentConflictMap.set(key, now);
+
+    const record: SyncConflictRecord = {
+      key,
+      table,
+      id,
+      localUpdatedAt: localUpdatedAt ?? null,
+      remoteUpdatedAt: remoteUpdatedAt ?? null,
+      detectedAt: new Date(now).toISOString(),
+    };
+    persistSyncConflict(record);
+    emitAppEvent(APP_EVENTS.SYNC_CONFLICT_DETECTED, record);
+  } catch {
+    // ignore
+  }
+}
 
 export interface RepositoryOptions {
   enableSync?: boolean; // Se false, apenas LocalStorage
@@ -328,6 +379,18 @@ private async getRemoteStore(): Promise<RemoteStoreLike<T> | null> {
 
         // Se item está pendente na outbox, NÃO sobrescrever (aguardar sync)
         if (pendingIds.has(remoteItem.id)) {
+          if (
+            remoteUpdated > 0 &&
+            localUpdated > 0 &&
+            remoteUpdated !== localUpdated
+          ) {
+            notifySyncConflict(
+              this.tableName,
+              remoteItem.id,
+              localItemAny.updated_at ?? null,
+              remoteItemAny.updated_at ?? null
+            );
+          }
           if (import.meta.env.DEV) {
             logger.log(`[Repository:${this.tableName}] Item ${remoteItem.id} está pendente na outbox, mantendo versão local`);
           }

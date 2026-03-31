@@ -601,28 +601,10 @@ function ConfiguracoesPage() {
                         <span className="company-logo-upload__file-name">
                           {logoFileName || (companyForm.logo_url ? 'Logo pronta para salvar.' : 'PNG, JPG, WEBP ou SVG. Ajuste automatico para impressao.')}
                         </span>
-
-                        <div className="company-logo-upload__preview">
-                          {companyForm.logo_url ? (
-                            <img src={companyForm.logo_url} alt="Preview da logo da empresa" />
-                          ) : (
-                            <div className="company-logo-upload__empty">
-                              A logo sera ajustada automaticamente para A4, 80mm e 58mm.
-                            </div>
-                          )}
+                        <div className="company-logo-upload__status">
+                          {companyForm.logo_url ? 'Logo cadastrada e pronta para os layouts de impressao.' : 'Sem logo cadastrada. O sistema imprime normalmente mesmo sem logo.'}
                         </div>
                       </div>
-                    </div>
-
-                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                      <label>Logo URL (opcional, avancado)</label>
-                      <input
-                        type="url"
-                        value={companyForm.logo_url}
-                        onChange={(e) => updateCompanyFormField('logo_url', e.target.value)}
-                        placeholder="https://.../logo.png"
-                        disabled={companySaving}
-                      />
                     </div>
 
                     <div className="form-group" style={{ gridColumn: '1 / -1' }}>

@@ -43,6 +43,7 @@ import { encryptIfEnabled } from './desktop-crypto';
 import { saveBlobToDesktopAppData, saveBlobWithDialog } from '@/lib/capabilities/file-save-adapter';
 import { getCurrentSession } from './auth-supabase';
 import { fetchCompany, upsertCompany } from './company-service';
+import { forceValidateLicense } from './license-service';
 
 // Hardening: rawStorage do backup é dado não confiável (pode vir de arquivo externo).
 // Permitimos apenas chaves do tenant no formato smarttech:<STORE_ID>:*
@@ -1447,6 +1448,14 @@ export async function restoreBackup(backup: BackupData, confirmOverwrite: boolea
 
     // P9: checkpoint imediato após restore (garante WAL limpo e melhora estabilidade)
     try { await forceSqliteCheckpoint('after-restore'); } catch { /* ignore */ }
+
+    if (!isDesktopApp()) {
+      try {
+        await forceValidateLicense();
+      } catch (error) {
+        logger.warn('[Backup] Não foi possível revalidar a licença após o restore:', error);
+      }
+    }
 
     try {
       const finalStoreId = restoreTargetStoreId || currentStoreId || getValidStoreIdOrNull() || undefined;

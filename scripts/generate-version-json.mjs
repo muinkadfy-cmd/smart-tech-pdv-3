@@ -24,7 +24,7 @@ const appCfg = readText(appCfgPath);
 
 // Extrai APP_VERSION = '2.0.36'
 const m = appCfg.match(/APP_VERSION\s*=\s*['\"]([^'\"]+)['\"]/);
-const version = (process.env.APP_VERSION || (m?.[1]) || '0.0.0').trim();
+const baseVersion = (process.env.APP_VERSION || (m?.[1]) || '0.0.0').trim();
 
 // P2-05 FIX: Build id com prioridade: CI env -> git -> timestamp
 // Garante BUILD_COMMIT sempre populado para rastreabilidade em suporte
@@ -37,6 +37,8 @@ if (!commit) commit = 'local-' + Date.now().toString(36).slice(-6);
 
 const iso = new Date().toISOString();
 const build = commit || iso;
+const deployStamp = iso.replace(/[-:TZ.]/g, '').slice(0, 14);
+const version = `${baseVersion}.${deployStamp}`;
 
 // Normaliza prioridade para o tipo aceito no app
 const rawPriority = (process.env.UPDATE_PRIORITY || 'normal').trim().toLowerCase();
@@ -62,7 +64,7 @@ fs.writeFileSync(path.join(publicDir, 'version.json'), JSON.stringify(manifest, 
 
 // src/config/buildInfo.ts (para o app saber qual build está rodando)
 const buildInfoPath = path.join(root, 'src', 'config', 'buildInfo.ts');
-const buildInfo = `import { APP_VERSION } from './app';\nexport const BUILD_VERSION = APP_VERSION;\nexport const BUILD_ID = ${JSON.stringify(build)};\nexport const BUILD_DATE = ${JSON.stringify(iso)};\nexport const BUILD_COMMIT = ${JSON.stringify(commit || '')};\n`;
+const buildInfo = `export const BUILD_VERSION = ${JSON.stringify(version)};\nexport const BUILD_BASE_VERSION = ${JSON.stringify(baseVersion)};\nexport const BUILD_ID = ${JSON.stringify(build)};\nexport const BUILD_DATE = ${JSON.stringify(iso)};\nexport const BUILD_COMMIT = ${JSON.stringify(commit || '')};\n`;
 fs.writeFileSync(buildInfoPath, buildInfo, 'utf8');
 
-console.log('[build] version.json gerado:', manifest.version, manifest.build);
+console.log('[build] version.json gerado:', manifest.version, `(base ${baseVersion})`, manifest.build);

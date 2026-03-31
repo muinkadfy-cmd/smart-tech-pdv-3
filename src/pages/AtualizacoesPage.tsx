@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useUpdates } from '@/contexts/UpdateContext';
 import { isDesktopApp } from '@/lib/platform';
 import { diffSinceCommit } from '@/lib/changelog';
-import { BUILD_COMMIT, BUILD_DATE, BUILD_ID, BUILD_VERSION } from '@/config/buildInfo';
+import { BUILD_BASE_VERSION, BUILD_COMMIT, BUILD_DATE, BUILD_ID, BUILD_VERSION } from '@/config/buildInfo';
 import './AtualizacoesPage.css';
 
 function formatDate(iso?: string) {
@@ -21,6 +21,13 @@ function formatBytes(bytes: number): string {
   if (mb < 1024) return `${mb.toFixed(1)} MB`;
   const gb = mb / 1024;
   return `${gb.toFixed(2)} GB`;
+}
+
+function getBaseVersion(version?: string) {
+  const raw = String(version || '').trim();
+  if (!raw) return '';
+  const parts = raw.split('.');
+  return parts.slice(0, Math.min(3, parts.length)).join('.');
 }
 
 const SECTION_ICONS: Record<string, string> = {
@@ -108,13 +115,20 @@ function AtualizacoesPage() {
   const title = manifest?.title?.trim() || 'Atualizações';
 
   const currentVersion = BUILD_VERSION;
+  const currentBaseVersion = BUILD_BASE_VERSION || getBaseVersion(BUILD_VERSION);
   const currentCommit = (BUILD_COMMIT || BUILD_ID || '').trim() || null;
   const currentBuildLabel = BUILD_DATE ? formatDate(BUILD_DATE) : '';
 
   const serverVersion = manifest?.version || changelog?.version || '—';
+  const serverBaseVersion = getBaseVersion(serverVersion);
   const serverBuildDate = (manifest as any)?.date || changelog?.build || '';
   const serverBuildLabel = serverBuildDate ? formatDate(serverBuildDate) : '';
   const serverCommit = String((manifest as any)?.commit || (manifest as any)?.build || changelog?.commit || '').trim();
+  const isNewVersion = Boolean(serverBaseVersion && currentBaseVersion && serverBaseVersion !== currentBaseVersion);
+  const updateLabel = isNewVersion ? 'Nova versão disponível' : 'Novo build disponível';
+  const updateExplanation = isNewVersion
+    ? `Você está em ${currentVersion} e há ${serverVersion} pronta para instalar.`
+    : `Você está no build ${currentVersion} e há um build de manutenção mais novo ${serverVersion} pronto para aplicar.`;
 
   // Mudanças desde o build atual (melhor para explicar o que muda ao atualizar)
   const sinceYou = useMemo(() => {
@@ -137,7 +151,7 @@ function AtualizacoesPage() {
           <h1>🆕 Atualizações</h1>
           <p className="updates-sub">
             {updateAvailable
-              ? `Atualização disponível. Você está em ${currentVersion} e há ${serverVersion} pronta para instalar.`
+              ? `${updateLabel}. ${updateExplanation}`
               : desktop ? 'Você está na versão Desktop (Tauri). Aqui você pode revisar o changelog e conferir a versão instalada.' : 'Você está atualizado. Aqui você pode revisar o changelog e forçar a atualização do PWA.'}
             {pwaNeedRefresh ? ' (SW novo pronto para aplicar)' : ''}
           </p>
@@ -209,9 +223,17 @@ function AtualizacoesPage() {
           <div className="updates-callout warn">
             <span className="updates-callout-icon">⬆️</span>
             <div>
-              <strong>Atualização disponível</strong>
+              <strong>{updateLabel}</strong>
               <div className="muted small">
-                Você está em <span className="mono">{currentVersion}</span> e há uma versão mais nova no servidor.
+                {isNewVersion ? (
+                  <>
+                    Você está em <span className="mono">{currentVersion}</span> e há uma nova versão no servidor.
+                  </>
+                ) : (
+                  <>
+                    Sua base continua em <span className="mono">{currentBaseVersion}</span>, mas existe um build de manutenção mais novo no servidor.
+                  </>
+                )}
                 {sinceCount > 0 ? ` (${sinceCount} mudança(s) no changelog)` : ''}
               </div>
               <div className="muted small" style={{ marginTop: 8 }}>
@@ -326,7 +348,7 @@ function AtualizacoesPage() {
       {(updateAvailable || hasUpdate) && sinceYou && sinceCount > 0 && (
         <div className="updates-section">
           <div className="updates-section-head">
-            <h2>📌 {updateAvailable ? 'O que muda ao atualizar' : 'O que mudou desde a sua versão'}</h2>
+            <h2>📌 {updateAvailable ? (isNewVersion ? 'O que muda na nova versão' : 'O que muda neste novo build') : 'O que mudou desde a sua versão'}</h2>
             <span className="updates-pill">{sinceCount} item(s)</span>
           </div>
 

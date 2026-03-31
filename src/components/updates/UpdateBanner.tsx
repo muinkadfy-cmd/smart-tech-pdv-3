@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUpdates } from '@/contexts/UpdateContext';
+import { BUILD_BASE_VERSION } from '@/config/buildInfo';
 import './UpdateBanner.css';
 
 const SESSION_KEY = 'smart-tech:update-banner-dismissed';
@@ -28,6 +29,12 @@ function dismiss(token: string) {
   }
 }
 
+function getBaseVersion(version: string) {
+  const raw = String(version || '').trim();
+  if (!raw) return '';
+  return raw.split('.').slice(0, 3).join('.');
+}
+
 export default function UpdateBanner() {
   const navigate = useNavigate();
   const { manifest, updateAvailable, pwaNeedRefresh, reloadApp, dismissPrompt } = useUpdates();
@@ -36,7 +43,10 @@ export default function UpdateBanner() {
     const version = String(manifest?.version || '').trim();
     const id = String((manifest as any)?.commit || (manifest as any)?.build || '').trim();
     const date = String((manifest as any)?.date || '').trim();
-    return { version, id, date, token: getToken(version, id, date) };
+    const currentBase = BUILD_BASE_VERSION || '';
+    const serverBase = getBaseVersion(version);
+    const isNewVersion = Boolean(serverBase && currentBase && serverBase !== currentBase);
+    return { version, id, date, token: getToken(version, id, date), isNewVersion };
   }, [manifest]);
 
   const shouldShow = (updateAvailable || pwaNeedRefresh) && !isDismissed(meta.token);
@@ -45,9 +55,9 @@ export default function UpdateBanner() {
   return (
     <div className="update-banner" role="status" aria-live="polite">
       <div className="update-banner__text">
-        <strong>Nova versão disponível</strong>
+        <strong>{meta.isNewVersion ? 'Nova versão disponível' : 'Novo build disponível'}</strong>
         <span>
-          {meta.version ? `Versão ${meta.version}` : 'Atualização do app pronta para instalar'}
+          {meta.version ? `${meta.isNewVersion ? 'Versão' : 'Build de manutenção'} ${meta.version}` : 'Atualização do app pronta para instalar'}
           {pwaNeedRefresh ? ' • pronta para aplicar' : ''}
         </span>
       </div>

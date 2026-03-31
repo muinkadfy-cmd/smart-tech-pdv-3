@@ -16,6 +16,8 @@ import { isDesktopApp } from './platform';
 import { kvGet, kvSet, kvRemove } from './desktop-kv';
 import { getDeviceId } from './device';
 import { isLicenseEnabled, isLicenseMandatory } from './mode';
+import { isRemoteRuntimeConfigured } from '@/lib/capabilities/runtime-remote-adapter';
+import { validateLicenseFromServer } from '@/lib/license-service';
 
 export type LicensePayload = {
   v: 1;
@@ -36,12 +38,13 @@ export type LicenseStatus = {
   daysRemaining?: number;
   message: string;
   lastValidatedAt?: string;
-  source?: 'local';
+  source?: 'local' | 'supabase' | 'cache';
   payload?: LicensePayload;
 };
 
 const LICENSE_TOKEN_KEY = 'smart-tech-license-token';
 const LICENSE_CACHE_KEY = 'smart-tech-license-cache'; // cache do último status validado
+const REMOTE_LICENSE_STATUS_KEY = 'smart-tech:license-status';
 
 // Trial (DEMO) - Desktop/PROD: permite uso por X dias sem licença.
 const TRIAL_DAYS = 7;
@@ -427,6 +430,58 @@ function writeCachedStatus(status: LicenseStatus): void {
   }
 }
 
+function shouldUseRemoteLicenseAuthority(): boolean {
+  return !isDesktopApp() && isRemoteRuntimeConfigured();
+}
+
+function readRemoteGuardStatus(): LicenseStatus | null {
+  try {
+    const raw = localStorage.getItem(REMOTE_LICENSE_STATUS_KEY);
+    if (!raw) return null;
+    const parsed = safeJsonParse<{
+      status?: 'active' | 'permanent' | 'expired' | 'blocked' | 'not_found' | 'offline';
+      expiresAt?: string | null;
+      daysRemaining?: number;
+      lastValidatedAt?: string;
+      source?: 'supabase' | 'cache';
+    }>(raw);
+    if (!parsed?.status) return null;
+
+    return {
+      status: parsed.status === 'permanent' ? 'active' : parsed.status,
+      validUntil: parsed.expiresAt ?? undefined,
+      daysRemaining: parsed.daysRemaining,
+      lastValidatedAt: parsed.lastValidatedAt,
+      source: parsed.source ?? 'cache',
+      message:
+        parsed.status === 'permanent'
+          ? 'Licença permanente'
+          : parsed.status === 'active'
+            ? 'Licença válida'
+            : parsed.status === 'blocked'
+              ? 'Loja bloqueada'
+              : parsed.status === 'expired'
+                ? 'Licença expirada'
+                : parsed.status === 'not_found'
+                  ? 'Nenhuma licença encontrada'
+                  : 'Validando licença…',
+    };
+  } catch {
+    return null;
+  }
+}
+
+function mapRemoteLicenseStatusToLocalLike(status: Awaited<ReturnType<typeof validateLicenseFromServer>>): LicenseStatus {
+  return {
+    status: status.status,
+    validUntil: status.expires_at,
+    daysRemaining: status.daysRemaining,
+    message: status.message,
+    lastValidatedAt: status.lastValidatedAt,
+    source: status.source,
+  };
+}
+
 function computeDaysRemaining(validUntilIso: string): number {
   const now = new Date();
   const end = new Date(validUntilIso);
@@ -461,6 +516,21 @@ export function getLicenseStatus(): LicenseStatus {
       status: 'active',
       message: 'Licença desativada (modo local)',
       source: 'local',
+      lastValidatedAt: new Date().toISOString(),
+    };
+  }
+
+  if (shouldUseRemoteLicenseAuthority()) {
+    const remoteCached = readRemoteGuardStatus();
+    if (remoteCached) {
+      writeCachedStatus(remoteCached);
+      return remoteCached;
+    }
+
+    return {
+      status: 'offline',
+      message: 'Validando licença remota…',
+      source: 'cache',
       lastValidatedAt: new Date().toISOString(),
     };
   }
@@ -523,6 +593,12 @@ export async function getLicenseStatusAsync(): Promise<LicenseStatus> {
     };
     writeCachedStatus(ok);
     return ok;
+  }
+
+  if (shouldUseRemoteLicenseAuthority()) {
+    const remoteStatus = mapRemoteLicenseStatusToLocalLike(await validateLicenseFromServer());
+    writeCachedStatus(remoteStatus);
+    return remoteStatus;
   }
 
   let token = readToken();

@@ -26,7 +26,7 @@ function readText(p) {
 // ---- Fonte da verdade da versão ----
 const appCfg = readText(resolve('src', 'config', 'app.ts'));
 const m = appCfg.match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
-const version = (process.env.APP_VERSION || m?.[1] || '0.0.0').trim();
+const baseVersion = (process.env.APP_VERSION || m?.[1] || '0.0.0').trim();
 
 // ---- Build/commit ----
 // Prefer Cloudflare commit SHA (build env), then git, then timestamp fallback
@@ -41,6 +41,8 @@ if (!commit) {
 }
 
 const build = new Date().toISOString();
+const deployStamp = build.replace(/[-:TZ.]/g, '').slice(0, 14);
+const version = `${baseVersion}.${deployStamp}`;
 if (!commit) commit = `build-${build.replace(/[^0-9]/g, '').slice(0, 14)}`;
 const limit = Math.max(10, Math.min(200, Number(process.env.CHANGELOG_LIMIT || 80)));
 
@@ -109,4 +111,4 @@ const publicDir = resolve('public');
 safeMkdir(publicDir);
 writeFileSync(resolve(publicDir, 'changelog.json'), JSON.stringify(payload, null, 2) + '\n', 'utf-8');
 
-console.log('[build] changelog.json gerado:', { version, commit, build, limit });
+console.log('[build] changelog.json gerado:', { version, baseVersion, commit, build, limit });

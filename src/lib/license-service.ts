@@ -387,8 +387,14 @@ export async function validateLicenseFromServer(): Promise<LicenseStatus> {
  * Força validação da licença (ignora cache)
  */
 export async function forceValidateLicense(): Promise<LicenseStatus> {
-  // Limpar cache para forçar busca do servidor
-  const cache = getLicenseCache();
+  // Limpar memo e caches para forçar busca do servidor
+  _licenseMemo = null;
+  try {
+    localStorage.removeItem(LICENSE_CACHE_KEY);
+    localStorage.removeItem(AUTH_GUARD_LICENSE_KEY);
+  } catch {
+    // ignore
+  }
   const wasOffline = !isBrowserOnlineSafe();
   
   // Se estava offline, tentar novamente

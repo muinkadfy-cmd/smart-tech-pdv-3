@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { showToast } from '@/components/ui/ToastContainer';
 import Modal from '@/components/ui/Modal';
 import WhatsAppButton from '@/components/ui/WhatsAppButton';
-import { APP_VERSION } from '@/config/app';
-import { BUILD_DATE } from '@/config/buildInfo';
+import { BUILD_DATE, BUILD_VERSION } from '@/config/buildInfo';
 import { getClientId } from '@/lib/tenant';
 import { getDeviceId } from '@/lib/device';
 import { getCurrentSession } from '@/lib/auth-supabase';
@@ -102,7 +101,7 @@ export default function AutoAjudaPage() {
   const handleCopiarRelatorio = async () => {
     const report = [
       `Smart Tech PDV - Relatório Rápido`,
-      `Versão: ${APP_VERSION}`,
+      `Versão: ${BUILD_VERSION}`,
       `Build: ${BUILD_DATE}`,
       `Online: ${info.online ? 'SIM' : 'NÃO'}`,
       `Usuário: ${info.user}`,
@@ -179,7 +178,7 @@ export default function AutoAjudaPage() {
   const suporteMensagem = useMemo(() => {
     const msg = [
       `Olá! Preciso de ajuda no Smart Tech PDV.`,
-      `Versão: ${APP_VERSION}`,
+      `Versão: ${BUILD_VERSION}`,
       `Online: ${info.online ? 'SIM' : 'NÃO'}`,
       `Usuário: ${info.user} (${info.role})`,
       `StoreId: ${info.storeId}`,
@@ -201,7 +200,7 @@ export default function AutoAjudaPage() {
 
       <div className="status-card">
         <div className="status-grid">
-          <div><span>Versão</span><strong>{APP_VERSION}</strong></div>
+          <div><span>Versão</span><strong>{BUILD_VERSION}</strong></div>
           <div><span>Online</span><strong className={info.online ? 'ok' : 'bad'}>{info.online ? 'SIM' : 'NÃO'}</strong></div>
           <div><span>Usuário</span><strong>{info.user}</strong></div>
           <div><span>Perfil</span><strong>{info.role}</strong></div>

@@ -1,10 +1,8 @@
 /**
- * Auth (LOCAL ONLY)
+ * Auth do app (Supabase-first com contingência local)
  *
- * - Sem Supabase Auth
- * - Usuários ficam em LocalStorage
- * - Sessão fica em **LocalStorage** após login bem-sucedido
- * - Sem sessão válida, o app exige login novamente
+ * - Em web/PWA com Supabase configurado, autenticação e sessão são remotas
+ * - Em cenários offline/contingência, alguns dados locais ainda podem ser usados
  * - Sem usuário padrão legado; apenas conta principal e contas de loja
  */
 

@@ -8,10 +8,23 @@ import { APP_EVENTS } from '@/lib/app-events';
 import { isBrowserOnlineSafe } from '@/lib/capabilities/runtime-remote-adapter';
 import './SyncStatusBar.css';
 
+const SYNC_CONFLICTS_STORAGE_KEY = 'smart-tech:sync-conflicts';
+
+function getStoredConflictCount(): number {
+  try {
+    const raw = window.localStorage.getItem(SYNC_CONFLICTS_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) as unknown[] : [];
+    return Array.isArray(parsed) ? parsed.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
 function SyncStatusBar() {
   const [isOnline, setIsOnline] = useState(isBrowserOnlineSafe());
   const [isSyncing, setIsSyncing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [conflictCount, setConflictCount] = useState(0);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -46,9 +59,16 @@ function SyncStatusBar() {
       // ignore
     }
     updatePending();
+    setConflictCount(getStoredConflictCount());
 
     const onSyncStatusChanged = (e: any) => applySyncDetail(e?.detail);
     const onOutboxChanged = () => updatePending();
+    const onSyncConflict = (e: any) => {
+      setConflictCount(getStoredConflictCount());
+      const detail = e?.detail;
+      const table = detail?.table || 'registro';
+      showToast(`Conflito detectado em ${table}. Mantive a versão local pendente e o remoto será revisado na próxima sincronização.`, 'warning', 6500);
+    };
     const onNetworkChange = () => {
       try {
         const s = getSyncStatus();
@@ -61,6 +81,7 @@ function SyncStatusBar() {
 
     window.addEventListener(APP_EVENTS.SYNC_STATUS_CHANGED, onSyncStatusChanged as any);
     window.addEventListener(APP_EVENTS.OUTBOX_CHANGED, onOutboxChanged as any);
+    window.addEventListener(APP_EVENTS.SYNC_CONFLICT_DETECTED, onSyncConflict as any);
     window.addEventListener('online', onNetworkChange);
     window.addEventListener('offline', onNetworkChange);
 
@@ -83,6 +104,7 @@ function SyncStatusBar() {
     return () => {
       window.removeEventListener(APP_EVENTS.SYNC_STATUS_CHANGED, onSyncStatusChanged as any);
       window.removeEventListener(APP_EVENTS.OUTBOX_CHANGED, onOutboxChanged as any);
+      window.removeEventListener(APP_EVENTS.SYNC_CONFLICT_DETECTED, onSyncConflict as any);
       window.removeEventListener('online', onNetworkChange);
       window.removeEventListener('offline', onNetworkChange);
       document.removeEventListener('visibilitychange', onVisible);
@@ -136,6 +158,14 @@ function SyncStatusBar() {
             <span className="pending-icon">⏳</span>
             <span className="pending-count">{pendingCount}</span>
             <span className="pending-text">pendente{pendingCount !== 1 ? 's' : ''}</span>
+          </div>
+        )}
+
+        {conflictCount > 0 && (
+          <div className="sync-pending-badge" title="Conflitos recentes detectados durante a sincronização">
+            <span className="pending-icon">⚠️</span>
+            <span className="pending-count">{conflictCount}</span>
+            <span className="pending-text">conflito{conflictCount !== 1 ? 's' : ''}</span>
           </div>
         )}
 

@@ -7,6 +7,7 @@
 export const APP_EVENTS = {
   OUTBOX_CHANGED: 'smart-tech:outbox-changed',
   SYNC_STATUS_CHANGED: 'smart-tech:sync-status-changed',
+  SYNC_CONFLICT_DETECTED: 'smart-tech:sync-conflict-detected',
   PINNED_PRODUCTS_CHANGED: 'smart-tech:pinned-products-changed',
   THEME_CHANGED: 'smart-tech:theme-changed',
   PERF_MODE_CHANGED: 'smart-tech:perf-mode-changed',

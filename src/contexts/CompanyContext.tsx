@@ -73,6 +73,7 @@ function updatePrintCache(first: CompanyData) {
     endereco: first.endereco || undefined,
     cidade: first.cidade || undefined,
     estado: first.estado || undefined,
+    logo_url: first.logo_url || undefined,
     slogan: first.mensagem_rodape || undefined
   });
 }

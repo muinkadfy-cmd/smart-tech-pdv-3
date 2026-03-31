@@ -285,10 +285,25 @@ export class RemoteStore<T extends { id: string }> {
       }
 
       const pkCol = this.getPrimaryKeyColumn();
-      const { error } = await supabase!
+      let query = supabase!
         .from(this.tableName)
         .delete()
         .eq(pkCol, id);
+
+      const scoped = resolveScopedStoreId(this.tableName);
+      if (scoped.required) {
+        if (scoped.error || !scoped.storeId) {
+          const error = scoped.error || {
+            message: 'store_id inválido/ausente. Configure a loja (URL ?store=UUID).',
+            code: 'STORE_ID_INVALID'
+          };
+          this.logError('remove', { id }, error);
+          return { success: false, error };
+        }
+        query = query.eq('store_id', scoped.storeId);
+      }
+
+      const { error } = await query;
 
       if (error) {
         this.logError('remove', { id }, error);
