@@ -102,6 +102,7 @@ export interface EmpresaInfo {
   endereco?: string;
   cidade?: string;
   estado?: string;
+  logo_url?: string;
   slogan?: string;
 }
 
@@ -167,6 +168,7 @@ const DEFAULT_EMPRESA: EmpresaInfo = {
   endereco: undefined,
   cidade: undefined,
   estado: undefined,
+  logo_url: undefined,
   slogan: undefined,
 };
 
@@ -395,6 +397,14 @@ export function generatePrintTemplate(
     .filter(Boolean)
     .join(', ');
 
+  const companyLogoHtml = empresa.logo_url
+    ? `
+      <div class="empresa-logo">
+        <img src="${t(empresa.logo_url)}" alt="${t(empresa.nome || 'Logo da empresa')}" />
+      </div>
+    `
+    : '';
+
   // Determinar título do documento
   let tituloDocumento = '';
   let subtituloDocumento = '';
@@ -495,14 +505,17 @@ export function generatePrintTemplate(
   
   // Cabeçalho compacto específico para O.S. (sem caixas/linhas quadradas)
   const headerOS = `
-    <div class="header header-os">
-      <div class="empresa-nome">${t(empresa.nome)}</div>
-      <div class="empresa-meta">
-        ${empresa.cnpj ? `<span>CNPJ: ${empresa.cnpj}</span>` : ''}
-        ${empresa.telefone ? `<span>Tel: ${empresa.telefone}</span>` : ''}
+    <div class="header header-os${empresa.logo_url ? ' header-with-logo' : ''}">
+      ${companyLogoHtml}
+      <div class="empresa-header-main">
+        <div class="empresa-nome">${t(empresa.nome)}</div>
+        <div class="empresa-meta">
+          ${empresa.cnpj ? `<span>CNPJ: ${empresa.cnpj}</span>` : ''}
+          ${empresa.telefone ? `<span>Tel: ${empresa.telefone}</span>` : ''}
+        </div>
+        ${enderecoCompleto ? `<div class="empresa-endereco">${t(enderecoCompleto)}</div>` : ''}
+        ${empresa.slogan ? `<div class="empresa-slogan">${t(empresa.slogan)}</div>` : ''}
       </div>
-      ${enderecoCompleto ? `<div class="empresa-endereco">${t(enderecoCompleto)}</div>` : ''}
-      ${empresa.slogan ? `<div class="empresa-slogan">${t(empresa.slogan)}</div>` : ''}
     </div>
     <div class="separator-thin"></div>`;
 
@@ -816,6 +829,35 @@ export function generatePrintTemplate(
             margin-bottom: ${modo === 'compact' ? '8px' : '12px'};
             padding-bottom: ${modo === 'compact' ? '4px' : '8px'};
           }
+
+          .header-with-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+
+          .empresa-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto ${modo === 'compact' ? '4px' : '8px'};
+            max-width: 100%;
+          }
+
+          .empresa-logo img {
+            display: block;
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            object-fit: contain;
+            object-position: center;
+            image-rendering: auto;
+          }
+
+          .empresa-header-main {
+            width: 100%;
+            min-width: 0;
+          }
           
           .empresa-nome {
             font-size: ${modo === 'compact' ? '14px' : '16px'};
@@ -853,6 +895,10 @@ export function generatePrintTemplate(
           .header.header-os {
             margin-bottom: 8px;
             padding-bottom: 0;
+          }
+
+          .header.header-os .empresa-logo {
+            margin-bottom: ${modo === 'compact' ? '3px' : '5px'};
           }
 
           .header.header-os .empresa-nome {
@@ -1158,6 +1204,7 @@ export function generatePrintTemplate(
             word-break: break-word;
           }
           body.paper-58mm .empresa-nome { font-size: 12px; margin-bottom: 4px; }
+          body.paper-58mm .empresa-logo img { max-width: 34mm; max-height: 16mm; }
           body.paper-58mm .empresa-info-box { gap: 4px; }
           body.paper-58mm .empresa-meta { gap: 6px; font-size: 8px; }
           body.paper-58mm .empresa-endereco { font-size: 8px; }
@@ -1191,6 +1238,7 @@ export function generatePrintTemplate(
           body.paper-58mm .assinatura { margin-top: 12px; font-size: 9px; }
           body.paper-58mm .assinatura-nome { font-size: 9px; }
           body.paper-58mm .header { margin-bottom: 8px; padding-bottom: 4px; }
+          body.paper-80mm .empresa-logo img { max-width: 48mm; max-height: 22mm; }
           body.paper-A4 {
             width: 100%;
             max-width: 190mm;
@@ -1198,6 +1246,7 @@ export function generatePrintTemplate(
             font-size: ${modo === 'compact' ? '12px' : '14px'};
             margin: 0 auto;
           }
+          body.paper-A4 .empresa-logo img { max-width: 42mm; max-height: 24mm; }
           body.paper-A4 .empresa-nome { font-size: 18px; }
           body.paper-A4 .documento-titulo { font-size: 16px; }
           body.paper-A4 .documento-subtitulo { font-size: 14px; }
@@ -1242,16 +1291,19 @@ export function generatePrintTemplate(
           body.paper-A4 .info-line { align-items: flex-start; }
         </style>
       </head>
-      <body class="print-receipt paper-${papel}${isEconomy50 ? ' economy-50' : ''}" data-print-scale="${scale}">
-        ${comprovanteLayoutHTML != null ? comprovanteLayoutHTML : `
-        <div class="header">
-          <div class="empresa-nome">${t(empresa.nome)}</div>
-          <div class="empresa-info-box">
-            ${empresa.cnpj ? `<div class="info-box">CNPJ: ${empresa.cnpj}</div>` : ''}
-            ${empresa.telefone ? `<div class="info-box">TEL: ${empresa.telefone}</div>` : ''}
+        <body class="print-receipt paper-${papel}${isEconomy50 ? ' economy-50' : ''}" data-print-scale="${scale}">
+          ${comprovanteLayoutHTML != null ? comprovanteLayoutHTML : `
+        <div class="header${empresa.logo_url ? ' header-with-logo' : ''}">
+          ${companyLogoHtml}
+          <div class="empresa-header-main">
+            <div class="empresa-nome">${t(empresa.nome)}</div>
+            <div class="empresa-info-box">
+              ${empresa.cnpj ? `<div class="info-box">CNPJ: ${empresa.cnpj}</div>` : ''}
+              ${empresa.telefone ? `<div class="info-box">TEL: ${empresa.telefone}</div>` : ''}
+            </div>
+            ${enderecoCompleto ? `<div class="empresa-endereco-box">${t(enderecoCompleto)}</div>` : ''}
+            ${empresa.slogan ? `<div class="empresa-slogan">${t(empresa.slogan)}</div>` : ''}
           </div>
-          ${enderecoCompleto ? `<div class="empresa-endereco-box">${t(enderecoCompleto)}</div>` : ''}
-          ${empresa.slogan ? `<div class="empresa-slogan">${t(empresa.slogan)}</div>` : ''}
         </div>
         <div class="separator-thick"></div>
         <div class="documento-titulo">${tituloDocumento}</div>
@@ -1558,6 +1610,24 @@ export function printTemplate(template: string, options?: { forceDialog?: boolea
         // padrão; se falhar, cai para impressão via iframe invisível (sem pop-up).
         const janelaImpressao = isDesktopApp() ? null : openPrintPreviewWindow();
     
+        const waitForDocumentImages = async (doc: Document | null | undefined) => {
+          if (!doc) return;
+          const images = Array.from(doc.images ?? []);
+          if (images.length === 0) return;
+
+          await Promise.all(
+            images.map((img) => {
+              if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+              return new Promise<void>((resolve) => {
+                const done = () => resolve();
+                img.addEventListener('load', done, { once: true });
+                img.addEventListener('error', done, { once: true });
+                setTimeout(done, 1500);
+              });
+            })
+          );
+        };
+
         if (janelaImpressao) {
           // Tentar escrever o template
           try {
@@ -1571,12 +1641,15 @@ export function printTemplate(template: string, options?: { forceDialog?: boolea
     
           // Tentar imprimir
           setTimeout(() => {
-            try {
-              janelaImpressao.print();
-            } catch (err: any) {
-              console.error('[Print] Erro ao chamar print():', err);
-              alert(`Erro ao iniciar impressão: ${err.message}`);
-            }
+            void (async () => {
+              try {
+                await waitForDocumentImages(janelaImpressao.document);
+                janelaImpressao.print();
+              } catch (err: any) {
+                console.error('[Print] Erro ao chamar print():', err);
+                alert(`Erro ao iniciar impressão: ${err.message}`);
+              }
+            })();
           }, 250);
           return;
         }
@@ -1627,16 +1700,18 @@ export function printTemplate(template: string, options?: { forceDialog?: boolea
 
                 // Aguardar carregamento de fontes (quando disponível) para evitar layout sujo
                 const fonts = (doc as any).fonts;
-                if (fonts?.ready) {
-                  try {
-                    await fonts.ready;
-                  } catch {
-                    // ignore
-                  }
+              if (fonts?.ready) {
+                try {
+                  await fonts.ready;
+                } catch {
+                  // ignore
                 }
               }
 
-              // Garantir ao menos 2 frames de layout antes do print
+              await waitForDocumentImages(doc);
+            }
+
+            // Garantir ao menos 2 frames de layout antes do print
               await waitFrames(2);
 
               iframe.contentWindow?.focus();

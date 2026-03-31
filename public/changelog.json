@@ -1,10 +1,22 @@
 {
-  "version": "2.0.42.20260331160621",
-  "build": "2026-03-31T16:06:21.909Z",
-  "commit": "a06891c",
+  "version": "2.0.42.20260331174434",
+  "build": "2026-03-31T17:44:34.840Z",
+  "commit": "356e07d",
   "limit": 80,
   "sections": {
     "Outros": [
+      {
+        "hash": "356e07d",
+        "date": "2026-03-31T14:24:41-03:00",
+        "type": "other",
+        "text": "persist company settings remotely for print layouts"
+      },
+      {
+        "hash": "cf1867f",
+        "date": "2026-03-31T13:07:23-03:00",
+        "type": "other",
+        "text": "normalize restore store scope and restore company data explicitly"
+      },
       {
         "hash": "a06891c",
         "date": "2026-03-31T12:34:27-03:00",
@@ -79,5 +91,5 @@
       }
     ]
   },
-  "generated_at": "2026-03-31T16:06:21.909Z"
+  "generated_at": "2026-03-31T17:44:34.840Z"
 }
