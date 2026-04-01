@@ -303,6 +303,44 @@ function addPatternOrderGrid(dst: number[], rawPattern: string, width: number) {
   addText(dst, `${cell(0)} ${cell(1)} ${cell(2)}`); lf(dst, 1);
   addText(dst, `${cell(3)} ${cell(4)} ${cell(5)}`); lf(dst, 1);
   addText(dst, `${cell(6)} ${cell(7)} ${cell(8)}`); lf(dst, 1);
+
+  const grid = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => " "));
+  const nodeChar = (idx: number) => (order[idx] ? "O" : "o");
+  const coords = [
+    [0, 0], [2, 0], [4, 0],
+    [0, 2], [2, 2], [4, 2],
+    [0, 4], [2, 4], [4, 4],
+  ] as const;
+
+  coords.forEach(([x, y], idx) => {
+    grid[y][x] = nodeChar(idx);
+  });
+
+  const connector = (a: number, b: number) => {
+    const [ax, ay] = coords[a];
+    const [bx, by] = coords[b];
+    const dx = Math.sign(bx - ax);
+    const dy = Math.sign(by - ay);
+    const steps = Math.max(Math.abs(bx - ax), Math.abs(by - ay));
+    const char = dx !== 0 && dy !== 0 ? (dx === dy ? "\\" : "/") : dx !== 0 ? "-" : "|";
+
+    for (let step = 1; step < steps; step++) {
+      const x = ax + dx * step;
+      const y = ay + dy * step;
+      if (grid[y]?.[x] === " ") grid[y][x] = char;
+    }
+  };
+
+  for (let i = 0; i < pts.length - 1; i++) {
+    connector(pts[i], pts[i + 1]);
+  }
+
+  lf(dst, 1);
+  addText(dst, "DESENHO:"); lf(dst, 1);
+  for (const row of grid) {
+    addText(dst, row.join(" "));
+    lf(dst, 1);
+  }
 }
 
 

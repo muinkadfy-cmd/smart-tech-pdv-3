@@ -155,16 +155,27 @@
   margin-bottom: 0.8mm;
 }
 
-.thermal-pattern__grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.2mm;
-  width: 24mm;
+.thermal-pattern__canvas {
+  position: relative;
+  width: 56px;
+  height: 56px;
+}
+
+.thermal-pattern__lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.thermal-pattern__path {
+  stroke: #000;
+  stroke-width: 1.6;
+  stroke-linecap: round;
 }
 
 .thermal-pattern__dot {
-  width: 6mm;
-  height: 6mm;
+  position: absolute;
   border: 1px solid #000;
   border-radius: 999px;
   display: flex;
