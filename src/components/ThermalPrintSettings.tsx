@@ -29,14 +29,13 @@ export default function ThermalPrintSettings() {
 
       <div className="thermal-settings__grid">
         <div className="form-group">
-          <label>Modo de impressão</label>
+          <label>Motor de impressão</label>
           <select
             value={settings.backend}
             onChange={(e) => { void update({ backend: e.target.value as any }); }}
           >
-            {!isDesktopApp() ? <option value="browser-route">Pré-visualização web</option> : null}
-            {!isDesktopApp() ? <option value="qz-tray">QZ Tray (web profissional)</option> : null}
-            {isDesktopApp() ? <option value="native-escpos">ESC/POS nativo</option> : null}
+            {!isDesktopApp() ? <option value="qz-tray">RAW/BT silencioso via QZ Tray</option> : null}
+            {isDesktopApp() ? <option value="native-escpos">RAW/BT silencioso nativo</option> : null}
           </select>
         </div>
 
@@ -167,7 +166,7 @@ export default function ThermalPrintSettings() {
       </div>
 
       <div className="thermal-settings__footnote">
-        Base útil recomendada: 48mm para POS-58 e 72mm para 80mm/Epson TM-T20.
+        Base útil recomendada: 48mm para POS-58 e 72mm para 80mm/Epson TM-T20. O modo compatível com diálogo foi removido da térmica.
       </div>
     </section>
   );

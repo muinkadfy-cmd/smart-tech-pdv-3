@@ -153,9 +153,9 @@ export default function PrinterSettings() {
           <div className="printer-settings__grid">
             <div className="form-group">
               <label>Motor térmico</label>
-              <input type="text" value="RAW ESC/POS silencioso (monocromático)" readOnly />
+              <input type="text" value="RAW/BT silencioso (monocromático)" readOnly />
               <span className="printer-settings__hint">
-                Impressão térmica fixa em modo direto para POS 80mm e 58mm, sem janela de diálogo.
+                Impressão térmica fixa em modo direto para POS 80mm e 58mm, sem janela de diálogo compatível.
               </span>
             </div>
 
@@ -186,7 +186,7 @@ export default function PrinterSettings() {
       )}
 
       <p className="printer-settings__tip">
-        Modo compatibilidade removido: a térmica trabalha sempre em <strong>RAW ESC/POS</strong>, silencioso e monocromático.
+        Modo compatibilidade removido: a térmica trabalha sempre em <strong>RAW/BT</strong>, silencioso e monocromático.
       </p>
 
       <p className="printer-settings__tip">

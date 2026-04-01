@@ -62,10 +62,16 @@ export async function printReceipt(request: PrintReceiptRequest): Promise<void> 
       });
       return;
     } catch (error) {
-      console.warn('[Print] QZ Tray falhou, usando rota limpa:', error);
+      console.error('[Print] QZ Tray falhou:', error);
+      const message = error instanceof Error ? error.message : String(error);
+      alert(
+        'Impressão térmica em modo RAW/BT indisponível.\n\n' +
+        `${message}\n\n` +
+        'Abra o QZ Tray, confirme a impressora e tente novamente.'
+      );
+      return;
     }
   }
 
-  const route = buildPrintRoute(request);
-  window.location.assign(route);
+  alert('Impressão térmica compatível foi removida. Use RAW/BT silencioso.');
 }

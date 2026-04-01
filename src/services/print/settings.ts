@@ -29,7 +29,7 @@ let hydrationStarted = false;
 export const DEFAULT_THERMAL_PRINT_SETTINGS: ThermalPrintSettings = {
   paperWidth: '58',
   printerProfile: 'generic-pos-58',
-  backend: 'browser-route',
+  backend: isDesktopApp() ? 'native-escpos' : 'qz-tray',
   usefulWidthMm: 48,
   innerMarginMm: 2,
   fontSizePx: 11,
@@ -53,7 +53,7 @@ function normalizeSettings(raw: Partial<ThermalPrintSettings> | null | undefined
   const paperWidth = raw?.paperWidth === '80' ? '80' : raw?.paperWidth === '58' ? '58' : profile.defaultPaperWidth;
   const backend = raw?.backend === 'qz-tray' || raw?.backend === 'native-escpos' || raw?.backend === 'browser-route'
     ? raw.backend
-    : (isDesktopApp() ? 'native-escpos' : 'browser-route');
+    : (isDesktopApp() ? 'native-escpos' : 'qz-tray');
 
   return {
     ...DEFAULT_THERMAL_PRINT_SETTINGS,
