@@ -18,6 +18,10 @@ interface ImportMetaEnv {
 
   readonly VITE_SUPABASE_URL: string;
   readonly VITE_SUPABASE_ANON_KEY: string;
+  readonly VITE_QZ_CERT_URL?: string;
+  readonly VITE_QZ_SIGN_URL?: string;
+  readonly VITE_QZ_CERT_PEM?: string;
+  readonly VITE_QZ_SIGNATURE_ALGORITHM?: string;
 }
 
 interface ImportMeta {

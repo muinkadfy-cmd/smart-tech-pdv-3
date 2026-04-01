@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { usePrintSettings } from '@/hooks/usePrintSettings';
 import { isDesktopApp } from '@/lib/platform';
 import { useCompany } from '@/contexts/CompanyContext';
-import { isQzTrayAvailable, listQzPrinters } from '@/services/print/qzTrayService';
+import { getQzTrustModeStatus, isQzTrayAvailable, listQzPrinters } from '@/services/print/qzTrayService';
 import { openPrintTest } from '@/services/print/receipt-service';
 import { detectThermalPrinterBrand, THERMAL_PRINTER_PROFILES } from '@/services/print/thermalProfiles';
 import './ThermalPrintSettings.css';
@@ -24,6 +24,7 @@ export default function ThermalPrintSettings() {
   const economyModeActive = settings.printDensity === 'compact' && settings.fontSizePx <= 10 && settings.innerMarginMm <= 1.5;
   const activeProfile = THERMAL_PRINTER_PROFILES[settings.printerProfile];
   const detectedPrinterText = detectThermalPrinterBrand(settings.qzPrinterName);
+  const qzTrust = getQzTrustModeStatus();
   const logoStatus = !settings.showLogo
     ? 'Logo desativada nesta impressão'
     : company?.logo_url
@@ -243,6 +244,20 @@ export default function ThermalPrintSettings() {
             </ol>
           </div>
 
+          <div className={`thermal-settings__trust-card ${qzTrust.configured ? 'is-ready' : 'is-pending'}`}>
+            <strong>{qzTrust.modeLabel}</strong>
+            <span>
+              {qzTrust.configured
+                ? 'Quando este domínio estiver publicado com certificado e endpoint de assinatura ativos, todos os usuários dessa URL com QZ Tray instalado recebem menos prompts e uma experiência mais confiável.'
+                : 'Ainda falta configurar certificado público e endpoint de assinatura no deploy para remover o aviso de site não confiável.'}
+            </span>
+            <div className="thermal-settings__trust-list">
+              <span>{qzTrust.certificateConfigured ? 'Certificado configurado' : 'Certificado pendente'}</span>
+              <span>{qzTrust.signatureConfigured ? 'Assinatura configurada' : 'Assinatura pendente'}</span>
+              <span>Algoritmo: {qzTrust.algorithm}</span>
+            </div>
+          </div>
+
           <div className="thermal-settings__qz-layout">
             <div className="form-group">
               <label>Script do QZ Tray</label>
@@ -283,6 +298,9 @@ export default function ThermalPrintSettings() {
               </span>
               <span className="thermal-settings__status">
                 {detectedPrinterText}
+              </span>
+              <span className="thermal-settings__status">
+                Benefício para usuários: {qzTrust.configured ? 'ativo para todos os clientes desse domínio' : 'só fica completo quando o domínio tiver assinatura confiável'}
               </span>
             </div>
           </div>

@@ -303,6 +303,41 @@
   gap: 0.45rem;
 }
 
+.thermal-settings__trust-card {
+  padding: 0.95rem 1rem;
+  border-radius: 16px;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.thermal-settings__trust-card.is-ready {
+  border: 1px solid rgba(90, 210, 150, 0.26);
+  background: linear-gradient(135deg, rgba(18, 48, 34, 0.95), rgba(16, 28, 37, 0.92));
+}
+
+.thermal-settings__trust-card.is-pending {
+  border: 1px solid rgba(245, 158, 11, 0.24);
+  background: linear-gradient(135deg, rgba(56, 38, 12, 0.9), rgba(24, 24, 28, 0.92));
+}
+
+.thermal-settings__trust-card span {
+  color: var(--text-secondary, #c1c9d4);
+}
+
+.thermal-settings__trust-list {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.thermal-settings__trust-list span {
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.82rem;
+}
+
 @media (max-width: 720px) {
   .thermal-settings__tabs {
     display: grid;

@@ -9,6 +9,105 @@ declare global {
 }
 
 let qzScriptPromise: Promise<void> | null = null;
+let qzSecurityPromise: Promise<void> | null = null;
+
+const QZ_SIGNATURE_ALGORITHM = (import.meta.env.VITE_QZ_SIGNATURE_ALGORITHM || 'SHA512').trim() || 'SHA512';
+const QZ_CERT_URL = String(import.meta.env.VITE_QZ_CERT_URL || '').trim();
+const QZ_SIGN_URL = String(import.meta.env.VITE_QZ_SIGN_URL || '').trim();
+const QZ_CERT_PEM = String(import.meta.env.VITE_QZ_CERT_PEM || '').replace(/\\n/g, '\n').trim();
+
+export interface QzTrustModeStatus {
+  configured: boolean;
+  certificateConfigured: boolean;
+  signatureConfigured: boolean;
+  algorithm: string;
+  modeLabel: string;
+}
+
+export function getQzTrustModeStatus(): QzTrustModeStatus {
+  const certificateConfigured = Boolean(QZ_CERT_PEM || QZ_CERT_URL);
+  const signatureConfigured = Boolean(QZ_SIGN_URL);
+  const configured = certificateConfigured && signatureConfigured;
+
+  return {
+    configured,
+    certificateConfigured,
+    signatureConfigured,
+    algorithm: QZ_SIGNATURE_ALGORITHM,
+    modeLabel: configured ? 'QZ confiável pronto para produção' : 'QZ confiável ainda pendente',
+  };
+}
+
+async function fetchTextOrThrow(url: string): Promise<string> {
+  const response = await fetch(url, {
+    cache: 'no-store',
+    headers: { 'Content-Type': 'text/plain' },
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(text || `Falha ao buscar ${url}`);
+  }
+  return text.trim();
+}
+
+async function fetchSignatureOrThrow(url: string, toSign: string): Promise<string> {
+  const encoded = encodeURIComponent(toSign);
+
+  try {
+    const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}request=${encoded}`, {
+      cache: 'no-store',
+      headers: { 'Content-Type': 'text/plain' },
+    });
+    const text = await response.text();
+    if (response.ok && text.trim()) return text.trim();
+  } catch {
+    // tenta fallback abaixo
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ request: toSign }),
+  });
+  const text = await response.text();
+  if (!response.ok || !text.trim()) {
+    throw new Error(text || 'Falha ao assinar mensagem do QZ Tray.');
+  }
+  return text.trim();
+}
+
+async function applyQzSecurityConfig(qz: any): Promise<void> {
+  const trust = getQzTrustModeStatus();
+  if (!trust.certificateConfigured && !trust.signatureConfigured) return;
+  if (qzSecurityPromise) return qzSecurityPromise;
+
+  qzSecurityPromise = Promise.resolve().then(() => {
+    if (trust.certificateConfigured) {
+      qz.security.setCertificatePromise((resolve: (value: string) => void, reject: (reason?: unknown) => void) => {
+        if (QZ_CERT_PEM) {
+          resolve(QZ_CERT_PEM);
+          return;
+        }
+        fetchTextOrThrow(QZ_CERT_URL).then(resolve).catch(reject);
+      });
+    }
+
+    if (trust.signatureConfigured) {
+      qz.security.setSignatureAlgorithm(trust.algorithm);
+      qz.security.setSignaturePromise((toSign: string) => {
+        return (resolve: (value: string) => void, reject: (reason?: unknown) => void) => {
+          fetchSignatureOrThrow(QZ_SIGN_URL, toSign).then(resolve).catch(reject);
+        };
+      });
+    }
+  }).catch((error) => {
+    qzSecurityPromise = null;
+    throw error;
+  });
+
+  return qzSecurityPromise;
+}
 
 function loadScript(src: string): Promise<void> {
   if (window.qz) return Promise.resolve();
@@ -37,6 +136,7 @@ function loadScript(src: string): Promise<void> {
 async function getQz(scriptUrl: string) {
   await loadScript(scriptUrl);
   if (!window.qz) throw new Error('QZ Tray não ficou disponível na página.');
+  await applyQzSecurityConfig(window.qz);
   return window.qz;
 }
 
