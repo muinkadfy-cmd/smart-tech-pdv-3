@@ -54,6 +54,14 @@ export async function connectQzTray(scriptUrl: string): Promise<void> {
   await qz.websocket.connect({ retries: 2, delay: 1 });
 }
 
+export async function listQzPrinters(scriptUrl: string): Promise<string[]> {
+  const qz = await getQz(scriptUrl);
+  await connectQzTray(scriptUrl);
+  const printers = await qz.printers.find();
+  if (!Array.isArray(printers)) return [];
+  return printers.map((item) => String(item || '').trim()).filter(Boolean);
+}
+
 function uint8ToBinaryString(data: Uint8Array): string {
   let out = '';
   for (let i = 0; i < data.length; i++) out += String.fromCharCode(data[i] & 0xff);

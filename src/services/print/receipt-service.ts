@@ -49,7 +49,7 @@ export async function printReceipt(request: PrintReceiptRequest): Promise<void> 
     try {
       const resolved = await resolveReceiptPrintData(request.type, request.id);
       if (!resolved) throw new Error('Documento de impressão não encontrado.');
-      const printerName = (printProfile.printerName || '').trim();
+      const printerName = (settings.qzPrinterName || printProfile.printerName || '').trim();
       if (!printerName) throw new Error('Selecione a impressora no sistema antes de usar QZ Tray.');
 
       await printViaQzTray({

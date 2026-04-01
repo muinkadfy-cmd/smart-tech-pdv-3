@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { usePrintSettings } from '@/hooks/usePrintSettings';
 import { isDesktopApp } from '@/lib/platform';
-import { isQzTrayAvailable } from '@/services/print/qzTrayService';
+import { isQzTrayAvailable, listQzPrinters } from '@/services/print/qzTrayService';
 import { THERMAL_PRINTER_PROFILES } from '@/services/print/thermalProfiles';
 import './ThermalPrintSettings.css';
 
 export default function ThermalPrintSettings() {
   const { settings, saving, update, applyProfile } = usePrintSettings();
   const [qzStatus, setQzStatus] = useState<'idle' | 'checking' | 'ready' | 'missing'>('idle');
+  const [qzPrinters, setQzPrinters] = useState<string[]>([]);
 
   const profileOptions = useMemo(() => Object.values(THERMAL_PRINTER_PROFILES), []);
 
@@ -15,6 +16,21 @@ export default function ThermalPrintSettings() {
     setQzStatus('checking');
     const ok = await isQzTrayAvailable(settings.qzScriptUrl);
     setQzStatus(ok ? 'ready' : 'missing');
+  }
+
+  async function handleLoadQzPrinters() {
+    setQzStatus('checking');
+    try {
+      const printers = await listQzPrinters(settings.qzScriptUrl);
+      setQzPrinters(printers);
+      setQzStatus(printers.length > 0 ? 'ready' : 'missing');
+      if (!settings.qzPrinterName && printers[0]) {
+        await update({ qzPrinterName: printers[0] });
+      }
+    } catch {
+      setQzStatus('missing');
+      setQzPrinters([]);
+    }
   }
 
   return (
@@ -122,8 +138,26 @@ export default function ThermalPrintSettings() {
               <button type="button" className="btn-secondary btn-sm" onClick={() => { void handleCheckQz(); }}>
                 {qzStatus === 'checking' ? 'Verificando...' : 'Testar QZ Tray'}
               </button>
+              <button type="button" className="btn-secondary btn-sm" onClick={() => { void handleLoadQzPrinters(); }}>
+                Carregar impressoras QZ
+              </button>
               <span className={`thermal-settings__status thermal-settings__status--${qzStatus}`}>
                 {qzStatus === 'ready' ? 'QZ Tray detectado' : qzStatus === 'missing' ? 'QZ Tray não encontrado' : 'Ainda não verificado'}
+              </span>
+            </div>
+            <div className="thermal-settings__qz-printer">
+              <label>Impressora do QZ Tray</label>
+              <select
+                value={settings.qzPrinterName || ''}
+                onChange={(e) => { void update({ qzPrinterName: e.target.value }); }}
+              >
+                <option value="">Selecione a impressora</option>
+                {qzPrinters.map((printer) => (
+                  <option key={printer} value={printer}>{printer}</option>
+                ))}
+              </select>
+              <span className="thermal-settings__status">
+                Essa impressora será usada no modo RAW/BT do navegador.
               </span>
             </div>
           </div>

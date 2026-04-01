@@ -9,6 +9,7 @@ export interface ThermalPrintSettings {
   paperWidth: ThermalPaperWidth;
   printerProfile: ThermalPrinterProfileId;
   backend: ThermalPrintBackend;
+  qzPrinterName: string;
   usefulWidthMm: number;
   innerMarginMm: number;
   fontSizePx: number;
@@ -30,6 +31,7 @@ export const DEFAULT_THERMAL_PRINT_SETTINGS: ThermalPrintSettings = {
   paperWidth: '58',
   printerProfile: 'generic-pos-58',
   backend: isDesktopApp() ? 'native-escpos' : 'qz-tray',
+  qzPrinterName: '',
   usefulWidthMm: 48,
   innerMarginMm: 2,
   fontSizePx: 11,
@@ -61,6 +63,7 @@ function normalizeSettings(raw: Partial<ThermalPrintSettings> | null | undefined
     paperWidth,
     printerProfile: profile.id,
     backend,
+    qzPrinterName: String(raw?.qzPrinterName || ''),
     usefulWidthMm: Number(raw?.usefulWidthMm) > 0 ? Number(raw?.usefulWidthMm) : profile.usefulWidthMm,
     innerMarginMm: Number(raw?.innerMarginMm) >= 0 ? Number(raw?.innerMarginMm) : profile.innerMarginMm,
     fontSizePx: Number(raw?.fontSizePx) >= 8 ? Number(raw?.fontSizePx) : profile.fontSizePx,

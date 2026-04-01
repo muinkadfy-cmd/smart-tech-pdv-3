@@ -76,3 +76,9 @@
 .thermal-settings__status--missing {
   color: #fca5a5;
 }
+
+.thermal-settings__qz-printer {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.35rem;
+}
