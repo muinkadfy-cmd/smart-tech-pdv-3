@@ -23,7 +23,7 @@ import PageToolbar from '@/components/ui/PageToolbar';
 import InfoBanner from '@/components/ui/InfoBanner';
 import { showToast } from '@/components/ui/ToastContainer';
 import PasswordPrompt, { usePasswordPrompt } from '@/components/ui/PasswordPrompt';
-import { PrintData, printDocument } from '@/lib/print-template';
+import { printReceipt } from '@/services/print/receipt-service';
 import { usePagination } from '@/hooks/usePagination';
 import { SearchBar } from '@/components/SearchBar';
 import ClientAutocomplete from '@/components/ui/ClientAutocomplete';
@@ -640,69 +640,9 @@ const descNum = parseMoneyBR(rawDesc);
   }, []);
 
   const handleImprimir = (venda: Venda, compact: boolean = false) => {
-    const cliente = venda.clienteId ? clientes.find(c => c.id === venda.clienteId) : null;
-    
-    // Montar endereço do cliente (prioriza snapshot da venda)
-    const enderecoCliente = [
-      venda.clienteEndereco ?? cliente?.endereco,
-      venda.clienteCidade ?? cliente?.cidade,
-      venda.clienteEstado ?? cliente?.estado
-    ]
-      .filter(Boolean)
-      .join(', ');
-
-    const buildItemDescricao = (item: any): string | undefined => {
-      const parts = [
-        item.manual_modelo ? `Modelo: ${String(item.manual_modelo).trim()}` : '',
-        item.manual_cor ? `Cor: ${String(item.manual_cor).trim()}` : '',
-        item.manual_imei ? `IMEI: ${String(item.manual_imei).trim()}` : '',
-        item.manual_descricao ? String(item.manual_descricao).trim() : '',
-      ].filter(Boolean);
-
-      return parts.length ? parts.join(' • ') : undefined;
-    };
-
-    // Montar itens da venda
-    const itensVenda = venda.itens.map(item => ({
-      nome: item.produtoNome,
-      quantidade: item.quantidade,
-      preco: item.precoUnitario,
-      descricao: buildItemDescricao(item),
-    }));
-
-    // Usar total líquido (desconto + taxa cartão já deduzidos) para impressão
-    const valorTotalImpressao = (venda as any).total_liquido ?? (venda as any).totalLiquido ?? (venda as any).total_final ?? venda.total;
-
-    // Calcular parcelas se for cartão crédito
-    let parcelas = '';
-    if ((venda.formaPagamento === 'credito' || venda.formaPagamento === 'cartao') && valorTotalImpressao > 0) {
-      // Usar o número real de parcelas se disponível
-      const numParcelas = venda.parcelas || 1;
-      if (numParcelas > 1) {
-        const valorParcela = valorTotalImpressao / numParcelas;
-        parcelas = `${numParcelas}X DE ${formatCurrency(valorParcela)}`;
-      }
-    }
-
-    const printData: PrintData = {
-      tipo: 'venda',
-      numero: venda.numero_venda ? `V-${venda.numero_venda}` : formatVendaId(venda.id),
-      clienteNome: venda.clienteNome,
-      clienteTelefone: venda.clienteTelefone ?? cliente?.telefone,
-      clienteEndereco: enderecoCliente,
-      data: venda.data,
-      itens: itensVenda,
-      valorTotal: valorTotalImpressao,
-      formaPagamento: venda.formaPagamento,
-      parcelas: parcelas,
-      cpfCnpj: cliente?.cpfCnpj,
-      garantia: venda.warranty_months ? `${venda.warranty_months} ${venda.warranty_months === 1 ? 'mês' : 'meses'}` : undefined,
-      termosGarantia: venda.warranty_terms?.trim() || undefined,
-      observacoes: venda.observacoes || undefined
-    };
-
-    printDocument(printData, compact ? { printMode: 'compact' } : undefined);
-};
+    void compact;
+    void printReceipt({ type: 'sale', id: venda.id });
+  };
 
   const readOnly = isReadOnlyMode();
   const canCreateVenda = canCreate() && !readOnly;

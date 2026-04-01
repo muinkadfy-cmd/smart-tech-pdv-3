@@ -37,6 +37,7 @@ import { Link } from 'react-router-dom';
 import FinanceMetricsCards from '@/components/FinanceMetricsCards';
 import { criarPeriodoPorTipo } from '@/lib/metrics';
 import { openExternalUrlByPlatform } from '@/lib/capabilities/external-url-adapter';
+import { printReceipt } from '@/services/print/receipt-service';
 import './OrdensPage.css';
 
 const DEFEITO_SEPARATOR = ' • ';
@@ -889,86 +890,9 @@ function OrdensPage() {
   };
 
   const handleImprimir = async (ordem: OrdemServico, compact: boolean = false) => {
-    const cliente = clientes.find(c => c.id === ordem.clienteId);
-    const clienteTelefone = ordem.clienteTelefone || cliente?.telefone;
-    
-    // Montar endereço do cliente
-    const enderecoCliente = cliente
-      ? [cliente.endereco, cliente.cidade, cliente.estado]
-          .filter(Boolean)
-          .join(', ')
-      : '';
-
-    // Determinar garantia (padrão 3 meses se não especificado)
-    // Nota: garantia não está no tipo OrdemServico, usando padrão
-    const meses = Number((ordem as any).warranty_months || 3);
-    const garantia = `${meses} MÊS${meses === 1 ? '' : 'ES'}`;
-
-    // Montar reparo técnico (laudo técnico ou situação)
-    const reparo = ordem.laudoTecnico || ordem.situacao || '';
-
-    let termosGarantia: string | undefined =
-      (ordem.warranty_terms_enabled && (ordem.warranty_terms_snapshot || '').trim())
-        ? (ordem.warranty_terms_snapshot || '').trim()
-        : undefined;
-    // Se a OS tem "incluir termos" mas o snapshot está vazio (OS antiga ou salvou antes de ter texto), usar termos atuais das configurações
-    if (ordem.warranty_terms_enabled && !(termosGarantia && termosGarantia.length > 0)) {
-      const res = await getWarrantySettings();
-      const text = (res.success && res.data?.warranty_terms || '').trim();
-      if (text) termosGarantia = text;
-    }
-
-    // Calcular parcelas se for cartão crédito
-    let parcelas = '';
-    if (ordem.formaPagamento === 'credito' || ordem.formaPagamento === 'cartao') {
-      const baseTotal = (ordem.total_bruto ?? ordem.valorTotal ?? ordem.total_liquido) || 0;
-      const numParcelas = (ordem as any).parcelas || 1;
-      if (baseTotal > 0 && numParcelas > 1) {
-        const valorParcela = baseTotal / numParcelas;
-        const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', {
-          style: 'currency',
-          currency: 'BRL'
-        }).format(val);
-        parcelas = `${numParcelas}X DE ${formatCurrency(valorParcela)}`;
-      }
-    }
-
-    const printData: PrintData = {
-      tipo: 'ordem-servico',
-      numero: ordem.numero,
-      clienteNome: ordem.clienteNome,
-      clienteTelefone: clienteTelefone,
-      clienteEndereco: enderecoCliente,
-      data: ordem.dataAbertura,
-      equipamento: ordem.equipamento,
-      marca: ordem.marca,
-      modelo: ordem.modelo,
-      cor: ordem.cor,
-      garantia: garantia,
-      defeito: ordem.defeito,
-      reparo: reparo,
-      senhaCliente: ordem.senhaCliente,
-      senhaPadrao: ordem.senhaPadrao || undefined,
-      situacao: ordem.situacao,
-      tecnico: ordem.tecnico,
-      dataConclusao: ordem.dataConclusao,
-      valorServico: ordem.valorServico,
-      valorPecas: ordem.valorPecas,
-      // ✅ Para OS (cliente): exibir sempre o VALOR BRUTO / valor do serviço.
-      // Valor líquido/taxas ficam apenas no Financeiro/Fluxo de Caixa (interno).
-      valorTotal: ordem.total_bruto || ordem.valorTotal || ((ordem.valorServico || 0) + (ordem.valorPecas || 0)),
-      valorBruto: ordem.total_bruto || ordem.valorTotal || ((ordem.valorServico || 0) + (ordem.valorPecas || 0)),
-      formaPagamento: ordem.formaPagamento,
-      parcelas: parcelas,
-      observacoes: ordem.observacoes,
-      termosGarantia: termosGarantia,
-      // Checklist (Acessórios): sempre enviar array para permitir imprimir caixas marcadas/desmarcadas.
-      acessorios: ordem.acessorios || [],
-      laudoTecnico: ordem.laudoTecnico || undefined
-    };
-
-    printDocument(printData, compact ? { printMode: 'compact' } : undefined);
-};
+    void compact;
+    await printReceipt({ type: 'service-order', id: ordem.id });
+  };
 
   const handleImprimirChecklist = async (ordem: OrdemServico, compact: boolean = false) => {
     const cliente = clientes.find(c => c.id === ordem.clienteId);

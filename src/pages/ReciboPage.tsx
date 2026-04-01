@@ -22,7 +22,7 @@ import SkeletonList from '@/components/ui/SkeletonList';
 
 import { showToast } from '@/components/ui/ToastContainer';
 import { formatCurrency, formatDate } from '@/utils/format';
-import { type PrintData, printDocument } from '@/lib/print-template';
+import { printReceipt } from '@/services/print/receipt-service';
 import { openExternalUrlByPlatform } from '@/lib/capabilities/external-url-adapter';
 
 import './ReciboPage.css';
@@ -157,6 +157,7 @@ function ReciboPage() {
     window.addEventListener('smart-tech-recibo-criado', onChanged as any);
     window.addEventListener('smart-tech-recibo-deletado', onChanged as any);
     window.addEventListener('smart-tech-movimentacao-criada', onChanged as any);
+    window.addEventListener('smart-tech-backup-restored', onChanged as any);
     window.addEventListener('smarttech:sqlite-ready', onChanged as any);
     window.addEventListener('smarttech:store-changed', onChanged as any);
     document.addEventListener('visibilitychange', onVisibility);
@@ -172,6 +173,7 @@ function ReciboPage() {
       window.removeEventListener('smart-tech-recibo-criado', onChanged as any);
       window.removeEventListener('smart-tech-recibo-deletado', onChanged as any);
       window.removeEventListener('smart-tech-movimentacao-criada', onChanged as any);
+      window.removeEventListener('smart-tech-backup-restored', onChanged as any);
       window.removeEventListener('smarttech:sqlite-ready', onChanged as any);
       window.removeEventListener('smarttech:store-changed', onChanged as any);
       document.removeEventListener('visibilitychange', onVisibility);
@@ -348,27 +350,9 @@ function ReciboPage() {
   };
 
   const handleImprimir = (recibo: Recibo, compact: boolean = false) => {
-    const cliente = (clientes ?? []).find(c => c.id === recibo.clienteId);
-    const enderecoCliente = cliente
-      ? [cliente.endereco, cliente.cidade, cliente.estado].filter(Boolean).join(', ')
-      : '';
-
-    const printData: PrintData = {
-      tipo: 'recibo',
-      numero: recibo.numero,
-      clienteNome: recibo.clienteNome,
-      clienteTelefone: cliente?.telefone || recibo.clienteTelefone,
-      clienteEndereco: enderecoCliente,
-      data: recibo.data,
-      descricao: recibo.descricao,
-      tipoRecibo: getTipoLabel(recibo.tipo),
-      valorTotal: recibo.valor,
-      formaPagamento: recibo.formaPagamento,
-      observacoes: recibo.observacoes
-    };
-
-    printDocument(printData, compact ? { printMode: 'compact' } : undefined);
-};
+    void compact;
+    void printReceipt({ type: 'receipt', id: recibo.id });
+  };
 
   return (
     <div className="recibo-page page-container">

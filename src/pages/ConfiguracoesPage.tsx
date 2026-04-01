@@ -4,6 +4,7 @@ import {getCurrentSession, isAdmin} from '@/lib/auth-supabase';
 import {getClientId} from '@/lib/tenant';
 import {downloadBackup} from '@/lib/backup';
 import {getSyncStatus} from '@/lib/repository/sync-engine';
+import ThermalPrintSettings from '@/components/ThermalPrintSettings';
 import {isLocalOnly} from '@/lib/mode';
 import { isDesktopApp } from '@/lib/platform';
 import {safeGet, safeSet} from '@/lib/storage';
@@ -672,6 +673,10 @@ function ConfiguracoesPage() {
       <p>Ajuste papel, modo de balcão e impressora padrão sem carregar a parte pesada do Windows antes da hora.</p>
     </div>
     <span className="printing-hero__badge">Baixo risco • ganho alto</span>
+  </div>
+
+  <div className="setting-section" style={{ marginTop: 'var(--spacing-md)' }}>
+    <ThermalPrintSettings />
   </div>
 
   {/* Tamanho do Papel */}

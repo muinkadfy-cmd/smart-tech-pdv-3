@@ -78,6 +78,7 @@ const BuyPage = lazy(() => import('@/pages/BuyPage'));
 const WizardPage = lazy(() => import('@/pages/WizardPage'));
 const ResetSenhaPage = lazy(() => import('@/pages/ResetSenhaPage'));
 const ConfigurarLojaPage = lazy(() => import('@/pages/ConfigurarLojaPage'));
+const PrintReceiptPage = lazy(() => import('@/pages/print/PrintReceiptPage'));
 const UsuariosPage = lazy(() => import('@/pages/UsuariosPage'));
 const LicensePage = lazy(() => import('@/pages/LicensePage'));
 const _StoreAccessPage = lazy(() => import('@/pages/StoreAccessPage'));
@@ -157,6 +158,14 @@ export const router = createBrowserRouter([
     ),
   },
 
+  {
+    path: '/print/:docType/:id',
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <PrintReceiptPage />
+      </Suspense>
+    ),
+  },
   {
     path: '/configurar-loja',
     element: (
