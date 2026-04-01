@@ -26,9 +26,13 @@ function withCors(body: BodyInit | null, init: ResponseInit, request: Request, e
 
 function stripPem(pem: string): string {
   return pem
+    .replace(/^\uFEFF/, "")
+    .replace(/^["']|["']$/g, "")
+    .replace(/\\r/g, "\r")
+    .replace(/\\n/g, "\n")
     .replace(/-----BEGIN [^-]+-----/g, "")
     .replace(/-----END [^-]+-----/g, "")
-    .replace(/\s+/g, "");
+    .replace(/[^A-Za-z0-9+/=]/g, "");
 }
 
 function base64ToArrayBuffer(base64: string): ArrayBuffer {
@@ -46,14 +50,24 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 async function importPrivateKey(pem: string, hashName: string): Promise<CryptoKey> {
-  const keyData = base64ToArrayBuffer(stripPem(pem));
-  return crypto.subtle.importKey(
-    "pkcs8",
-    keyData,
-    { name: "RSASSA-PKCS1-v1_5", hash: { name: hashName } },
-    false,
-    ["sign"],
-  );
+  const cleaned = stripPem(pem);
+  if (!cleaned) {
+    throw new Error("QZ_PRIVATE_KEY vazia ou inválida após limpeza do PEM.");
+  }
+
+  const keyData = base64ToArrayBuffer(cleaned);
+  try {
+    return await crypto.subtle.importKey(
+      "pkcs8",
+      keyData,
+      { name: "RSASSA-PKCS1-v1_5", hash: { name: hashName } },
+      false,
+      ["sign"],
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Falha ao importar PKCS8";
+    throw new Error(`QZ_PRIVATE_KEY inválida para PKCS8 (${message}).`);
+  }
 }
 
 async function signPayload(payload: string, env: Env): Promise<string> {
