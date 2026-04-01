@@ -2,9 +2,9 @@ import type { Cliente, OrdemServico, Recibo, Venda } from '@/types';
 import { getClientes } from '@/lib/clientes';
 import { fetchCompany } from '@/lib/company-service';
 import { formatVendaId } from '@/lib/format-display-id';
-import { getOrdemPorId } from '@/lib/ordens';
+import { getOrdensAsync } from '@/lib/ordens';
 import { getRecibos } from '@/lib/recibos';
-import { getVendaPorId } from '@/lib/vendas';
+import { getVendasAsync } from '@/lib/vendas';
 import type { EmpresaInfo, PrintData } from '@/lib/print-template';
 
 export type PrintableReceiptType = 'sale' | 'receipt' | 'service-order';
@@ -87,7 +87,7 @@ async function resolveCompanyInfo(): Promise<EmpresaInfo> {
 }
 
 export async function buildSaleReceiptById(id: string): Promise<ResolvedReceiptPrintData | null> {
-  const venda = getVendaPorId(id);
+  const venda = (await getVendasAsync()).find((item) => item.id === id) || null;
   if (!venda) return null;
 
   const cliente = getClienteById(venda.clienteId);
@@ -218,7 +218,7 @@ export async function buildReceiptById(id: string): Promise<ResolvedReceiptPrint
 }
 
 export async function buildServiceOrderReceiptById(id: string): Promise<ResolvedReceiptPrintData | null> {
-  const ordem = getOrdemPorId(id);
+  const ordem = (await getOrdensAsync()).find((item) => item.id === id) || null;
   if (!ordem) return null;
 
   const cliente = getClienteById(ordem.clienteId);
@@ -291,4 +291,3 @@ export async function resolveReceiptPrintData(type: PrintableReceiptType, id: st
   if (type === 'service-order') return buildServiceOrderReceiptById(id);
   return null;
 }
-

@@ -1,5 +1,6 @@
 import { isDesktopApp } from '@/lib/platform';
 import { printDocument } from '@/lib/print-template';
+import { getRuntimeStoreId } from '@/lib/runtime-context';
 import { loadThermalPrintSettings } from './settings';
 import { resolveReceiptPrintData, type PrintableReceiptType } from './receipt-builders';
 
@@ -14,10 +15,12 @@ function buildPrintRoute(request: PrintReceiptRequest) {
   const settings = loadThermalPrintSettings();
   const paper = request.paperWidth ?? settings.paperWidth;
   const profile = request.printerProfile ?? settings.printerProfile;
+  const storeId = getRuntimeStoreId();
   const params = new URLSearchParams({
     paper,
     profile,
   });
+  if (storeId) params.set('store', storeId);
   return `/print/${request.type}/${encodeURIComponent(request.id)}?${params.toString()}`;
 }
 

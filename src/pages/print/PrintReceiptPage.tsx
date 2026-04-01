@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import ThermalReceiptDocument from '@/components/print/ThermalReceiptDocument';
 import { resolveReceiptPrintData, type PrintableReceiptType } from '@/services/print/receipt-builders';
 import { loadThermalPrintSettings, type ThermalPrintSettings } from '@/services/print/settings';
+import { isValidUUID, setStoreId } from '@/lib/store-id';
 
 export default function PrintReceiptPage() {
   const { docType, id } = useParams<{ docType: PrintableReceiptType; id: string }>();
@@ -32,7 +33,21 @@ export default function PrintReceiptPage() {
         return;
       }
 
-      const resolved = await resolveReceiptPrintData(docType, id);
+      const requestedStore = searchParams.get('store')?.trim() || '';
+      if (requestedStore && isValidUUID(requestedStore)) {
+        setStoreId(requestedStore, { force: true, reason: 'print-route-bootstrap' });
+      }
+
+      const tryResolve = async () => {
+        for (let attempt = 0; attempt < 12; attempt++) {
+          const resolvedTry = await resolveReceiptPrintData(docType, id);
+          if (resolvedTry) return resolvedTry;
+          await new Promise((resolve) => window.setTimeout(resolve, 180));
+        }
+        return null;
+      };
+
+      const resolved = await tryResolve();
       if (!alive) return;
 
       if (!resolved) {
@@ -48,7 +63,7 @@ export default function PrintReceiptPage() {
     return () => {
       alive = false;
     };
-  }, [docType, id]);
+  }, [docType, id, searchParams]);
 
   useEffect(() => {
     if (loading || error || !model) return;
