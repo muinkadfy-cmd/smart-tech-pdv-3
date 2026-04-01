@@ -65,16 +65,6 @@ export default function UpdateBanner() {
           {pwaNeedRefresh ? ' • pronta para aplicar' : ''}
         </span>
 
-        <div className="update-banner__warning" role="alert">
-          <div className="update-banner__warning-head">
-            <span className="update-banner__warning-pill">Alerta crítico</span>
-            <div className="update-banner__warning-title">Faça backup antes de atualizar no modo web.</div>
-          </div>
-
-          <div className="update-banner__warning-compact">
-            Atualize só depois do backup. Ao terminar, confira financeiro e fluxo de caixa. Se faltar algum dado, restaure o backup mais recente.
-          </div>
-        </div>
       </div>
 
       <div className="update-banner__actions">
