@@ -13,6 +13,28 @@ export default function ThermalPrintSettings() {
   const qzDownloadUrl = 'https://github.com/qzind/tray/releases/download/v2.2.5/qz-tray-2.2.5-x86_64.exe';
 
   const profileOptions = useMemo(() => Object.values(THERMAL_PRINTER_PROFILES), []);
+  const economyModeActive = settings.printDensity === 'compact' && settings.fontSizePx <= 10 && settings.innerMarginMm <= 1.5;
+
+  async function handleApplyNormalMode() {
+    const profile = THERMAL_PRINTER_PROFILES[settings.printerProfile];
+    await update({
+      printDensity: 'normal',
+      innerMarginMm: profile?.innerMarginMm ?? 2,
+      fontSizePx: profile?.fontSizePx ?? (settings.paperWidth === '80' ? 12 : 11),
+      lineHeight: profile?.lineHeight ?? 1.22,
+      showFooterCut: true,
+    });
+  }
+
+  async function handleApplyReducedMode() {
+    await update({
+      printDensity: 'compact',
+      innerMarginMm: 1,
+      fontSizePx: settings.paperWidth === '80' ? 10 : 9,
+      lineHeight: 1.08,
+      showFooterCut: false,
+    });
+  }
 
   async function handleCheckQz() {
     setQzStatus('checking');
@@ -207,6 +229,25 @@ export default function ThermalPrintSettings() {
           <div className="thermal-settings__intro-card">
             <strong>Visual e acabamento</strong>
             <p>Ajuste o espaço interno, a densidade do texto e os elementos visuais do cupom para ficar limpo e econômico.</p>
+          </div>
+
+          <div className="thermal-settings__mode-cards">
+            <button
+              type="button"
+              className={`thermal-settings__mode-card ${!economyModeActive ? 'is-active' : ''}`}
+              onClick={() => { void handleApplyNormalMode(); }}
+            >
+              <strong>Modo normal</strong>
+              <span>Leitura mais confortável, com espaçamento padrão e linha de corte visível.</span>
+            </button>
+            <button
+              type="button"
+              className={`thermal-settings__mode-card ${economyModeActive ? 'is-active' : ''}`}
+              onClick={() => { void handleApplyReducedMode(); }}
+            >
+              <strong>Modo reduzido</strong>
+              <span>Economiza papel com fonte menor, margens mais curtas e cupom mais seco.</span>
+            </button>
           </div>
 
           <div className="thermal-settings__grid">
