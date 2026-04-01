@@ -1,13 +1,15 @@
-import type { Cliente, OrdemServico, Recibo, Venda } from '@/types';
+import type { Cobranca, Cliente, OrdemServico, Recibo, Venda } from '@/types';
 import { getClientes } from '@/lib/clientes';
+import { getCobrancas } from '@/lib/cobrancas';
 import { fetchCompany } from '@/lib/company-service';
+import { formatCobrancaId } from '@/lib/format-display-id';
 import { formatVendaId } from '@/lib/format-display-id';
 import { getOrdensAsync } from '@/lib/ordens';
 import { getRecibos } from '@/lib/recibos';
 import { getVendasAsync } from '@/lib/vendas';
 import type { EmpresaInfo, PrintData } from '@/lib/print-template';
 
-export type PrintableReceiptType = 'sale' | 'receipt' | 'service-order' | 'test';
+export type PrintableReceiptType = 'sale' | 'receipt' | 'service-order' | 'charge' | 'test';
 
 export interface ThermalReceiptLineItem {
   label: string;
@@ -285,6 +287,60 @@ export async function buildServiceOrderReceiptById(id: string): Promise<Resolved
   };
 }
 
+export async function buildChargeReceiptById(id: string): Promise<ResolvedReceiptPrintData | null> {
+  const cobranca = (getCobrancas() ?? []).find((item) => item.id === id) as Cobranca | undefined;
+  if (!cobranca) return null;
+
+  const cliente = getClienteById(cobranca.clienteId);
+  const enderecoCliente = getClienteEndereco(cliente);
+  const company = await resolveCompanyInfo();
+  const dataComprovante = cobranca.status === 'paga' && cobranca.dataPagamento
+    ? cobranca.dataPagamento
+    : cobranca.dataCriacao;
+  const notes = [
+    cobranca.status === 'paga'
+      ? `Cobrança quitada em ${formatDateLabel(cobranca.dataPagamento || cobranca.dataCriacao)}`
+      : `Vencimento: ${formatDateLabel(cobranca.vencimento)}`,
+    cobranca.observacoes || '',
+  ].filter(Boolean) as string[];
+
+  return {
+    printData: {
+      tipo: 'comprovante',
+      numero: formatCobrancaId(cobranca.id),
+      clienteNome: cobranca.clienteNome,
+      clienteTelefone: cliente?.telefone,
+      clienteEndereco: enderecoCliente,
+      data: dataComprovante,
+      descricao: cobranca.descricao,
+      valorTotal: cobranca.valor,
+      formaPagamento: cobranca.formaPagamento,
+      observacoes: notes.join(' | '),
+    },
+    thermalModel: {
+      type: 'charge',
+      title: cobranca.status === 'paga' ? 'Comprovante de pagamento' : 'Comprovante de cobrança',
+      documentNumber: formatCobrancaId(cobranca.id),
+      dateLabel: formatDateLabel(dataComprovante),
+      customerName: cobranca.clienteNome,
+      customerPhone: cliente?.telefone,
+      customerAddress: enderecoCliente,
+      company,
+      items: [{
+        label: cobranca.descricao || 'Cobrança',
+        total: cobranca.valor,
+        note: cobranca.status === 'paga'
+          ? `Pagamento: ${String(cobranca.formaPagamento || 'não informado').toUpperCase()}`
+          : `Status: ${String(cobranca.status || 'pendente').toUpperCase()}`,
+      }],
+      total: cobranca.valor,
+      paymentLabel: cobranca.formaPagamento ? String(cobranca.formaPagamento).toUpperCase() : undefined,
+      notes,
+      footerMessage: company.slogan || 'Obrigado pela preferencia. Volte sempre.',
+    },
+  };
+}
+
 export async function buildTestReceipt(): Promise<ResolvedReceiptPrintData> {
   const company = await resolveCompanyInfo();
   const now = new Date().toISOString();
@@ -332,6 +388,7 @@ export async function resolveReceiptPrintData(type: PrintableReceiptType, id: st
   if (type === 'sale') return buildSaleReceiptById(id);
   if (type === 'receipt') return buildReceiptById(id);
   if (type === 'service-order') return buildServiceOrderReceiptById(id);
+  if (type === 'charge') return buildChargeReceiptById(id);
   if (type === 'test') return buildTestReceipt();
   return null;
 }

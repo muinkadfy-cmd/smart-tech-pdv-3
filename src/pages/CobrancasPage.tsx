@@ -13,10 +13,9 @@ import ReadOnlyBanner from '@/components/ReadOnlyBanner';
 import { showToast } from '@/components/ui/ToastContainer';
 import PasswordPrompt, { usePasswordPrompt } from '@/components/ui/PasswordPrompt';
 import ClientAutocomplete from '@/components/ui/ClientAutocomplete';
-import { PrintData, printDocument } from '@/lib/print-template';
+import { printReceipt } from '@/services/print/receipt-service';
 import FinanceMetricsCards from '@/components/FinanceMetricsCards';
 import { getMetrics, criarPeriodoPorTipo } from '@/lib/metrics';
-import { formatCobrancaId } from '@/lib/format-display-id';
 import './CobrancasPage.css';
 import PageHeader from '@/components/ui/PageHeader';
 import PageToolbar from '@/components/ui/PageToolbar';
@@ -89,6 +88,7 @@ function CobrancasPage() {
     window.addEventListener('smart-tech-cobranca-atualizada', atualizarCobrancas as any);
     window.addEventListener('smart-tech-cobranca-deletada', atualizarCobrancas as any);
     window.addEventListener('smart-tech-movimentacao-criada', atualizarCobrancas as any);
+    window.addEventListener('smart-tech-backup-restored', atualizarCobrancas as any);
     window.addEventListener('smarttech:sqlite-ready', atualizarCobrancas as any);
     window.addEventListener('smarttech:store-changed', atualizarCobrancas as any);
     document.addEventListener('visibilitychange', onVisibility);
@@ -105,6 +105,7 @@ function CobrancasPage() {
       window.removeEventListener('smart-tech-cobranca-atualizada', atualizarCobrancas as any);
       window.removeEventListener('smart-tech-cobranca-deletada', atualizarCobrancas as any);
       window.removeEventListener('smart-tech-movimentacao-criada', atualizarCobrancas as any);
+      window.removeEventListener('smart-tech-backup-restored', atualizarCobrancas as any);
       window.removeEventListener('smarttech:sqlite-ready', atualizarCobrancas as any);
       window.removeEventListener('smarttech:store-changed', atualizarCobrancas as any);
       document.removeEventListener('visibilitychange', onVisibility);
@@ -290,25 +291,9 @@ function CobrancasPage() {
   };
 
   const handleImprimir = (cobranca: Cobranca, compact: boolean = false) => {
-    const cliente = clientes.find(c => c.id === cobranca.clienteId);
-    const dataComprovante = cobranca.status === 'paga' && cobranca.dataPagamento
-      ? cobranca.dataPagamento
-      : cobranca.dataCriacao;
-    const printData: PrintData = {
-      tipo: 'comprovante',
-      numero: formatCobrancaId(cobranca.id),
-      clienteNome: cobranca.clienteNome,
-      clienteTelefone: cliente?.telefone,
-      data: dataComprovante,
-      descricao: cobranca.descricao,
-      valorTotal: cobranca.valor,
-      formaPagamento: cobranca.formaPagamento,
-      observacoes: cobranca.status === 'paga'
-        ? `Cobrança quitada em ${cobranca.dataPagamento ? formatDate(cobranca.dataPagamento) : '-'}`
-        : `Vencimento: ${formatDate(cobranca.vencimento)}${cobranca.observacoes ? ` | ${cobranca.observacoes}` : ''}`,
-    };
-    printDocument(printData, compact ? { printMode: 'compact' } : undefined);
-};
+    void compact;
+    void printReceipt({ type: 'charge', id: cobranca.id });
+  };
 
   const getStatusLabel = (status: StatusCobranca) => {
     const labels = {
