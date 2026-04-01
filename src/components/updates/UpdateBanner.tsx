@@ -56,13 +56,12 @@ export default function UpdateBanner() {
     <div className="update-banner" role="status" aria-live="polite">
       <div className="update-banner__text">
         <strong>{meta.isNewVersion ? 'Nova versão disponível' : 'Novo build disponível'}</strong>
-        <span>
+        <span className="update-banner__summary">
           {meta.version ? `${meta.isNewVersion ? 'Versão' : 'Build de manutenção'} ${meta.version}` : 'Atualização do app pronta para instalar'}
           {pwaNeedRefresh ? ' • pronta para aplicar' : ''}
+          {' • Faça backup antes de atualizar'}
         </span>
-        <small className="update-banner__warning">
-          Faça backup antes de atualizar. Se o processo for interrompido, pode haver inconsistência temporária no financeiro e fluxo de caixa.
-        </small>
+        <small className="update-banner__warning">Risco preventivo: se a atualização for interrompida, pode haver inconsistência temporária no financeiro e fluxo de caixa.</small>
       </div>
 
       <div className="update-banner__actions">

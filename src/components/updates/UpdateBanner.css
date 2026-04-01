@@ -24,13 +24,12 @@
   font-size: 13px;
 }
 
-.update-banner__text span {
+.update-banner__text span,
+.update-banner__summary {
   color: var(--text-secondary);
   font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   max-width: 60vw;
+  line-height: 1.4;
 }
 
 .update-banner__warning {
