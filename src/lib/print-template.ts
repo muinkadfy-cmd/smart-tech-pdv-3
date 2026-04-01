@@ -1392,7 +1392,7 @@ function injectDesktopThermalProfile(html: string): string {
 
 /**
  * Imprime um documento do PDV usando o melhor motor disponível:
- * - Desktop + térmica (58/80mm) + engine=escpos => ESC/POS nativo (silencioso, consistente)
+ * - Desktop + térmica (58/80mm) => ESC/POS raw nativo (silencioso, monocromático e consistente)
  * - Caso contrário => HTML (fluxo atual)
  *
  * Observação: mantém compatibilidade total com o printTemplate() existente.
@@ -1432,21 +1432,16 @@ export function printDocument(
   const papel: TamanhoPapel = options?.paperSize ?? getPaperSize();
   const modo: PrintMode = options?.printMode ?? getPrintMode();
 
-  // Engine preference from profile (Printer Settings)
   const profile = loadPrintProfile();
-  const engine = profile?.engine ?? (isDesktopApp() ? 'escpos' : 'html');
-
   const isThermal = papel === '58mm' || papel === '80mm';
   const preset = papel === '58mm' ? '58mm' : '80mm';
 
   const shouldUseEscposThermal =
-    engine === 'escpos' &&
     isDesktopApp() &&
-    isThermal &&
-    !empresa.logo_url;
+    isThermal;
 
-  // ✅ ESC/POS (RAW) somente para térmica sem logo.
-  // Quando a empresa usa logo, forçamos HTML para manter o cabeçalho visual.
+  // ✅ Térmica no desktop sempre usa RAW ESC/POS silencioso e monocromático.
+  // Isso evita preview torto, diálogo do navegador e inconsistências de layout.
   if (shouldUseEscposThermal) {
     void (async () => {
       const bytes = buildEscposReceiptFromPrintData(data, empresa, preset, modo);

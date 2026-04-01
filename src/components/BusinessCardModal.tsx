@@ -441,11 +441,10 @@ const handleOpenQrSite = useCallback(async () => {
     }
 
     const profile = loadPrintProfile();
-    const engine = profile?.engine ?? 'html';
     const printerName = (profile?.printerName ?? '').trim();
 
-    // Se não estiver em ESC/POS (ou não tiver impressora definida), cai no fluxo com diálogo.
-    if (engine !== 'escpos' || !printerName) {
+    // Se não tiver impressora definida, cai no fluxo com diálogo.
+    if (!printerName) {
       await handlePrintWithDialog();
       return;
     }

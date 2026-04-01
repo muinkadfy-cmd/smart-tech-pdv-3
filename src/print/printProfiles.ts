@@ -3,8 +3,8 @@ import { hydrateUiPref, readUiPrefLocal, setUiPref } from '@/lib/ui-prefs';
 export type ThermalPreset = "58mm" | "80mm";
 
 export interface PrintProfile {
-  /** Printing engine. 'escpos' is recommended for thermal (silent, consistent). */
-  engine?: "escpos" | "html";
+  /** Thermal engine is fixed to ESC/POS raw for silent monochrome printing. */
+  engine?: "escpos";
   printerName?: string;
   preset: ThermalPreset;
   // mm offsets to compensate printer hardware margins / cutter area
@@ -29,7 +29,8 @@ function parseProfile(raw: string | null): PrintProfile {
   if (!raw) return DEFAULT_PROFILE;
   try {
     const obj = JSON.parse(raw);
-    return { ...DEFAULT_PROFILE, ...obj };
+    const engine = obj?.engine === "html" ? "escpos" : "escpos";
+    return { ...DEFAULT_PROFILE, ...obj, engine };
   } catch {
     return DEFAULT_PROFILE;
   }

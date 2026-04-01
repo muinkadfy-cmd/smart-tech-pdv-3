@@ -152,11 +152,11 @@ export default function PrinterSettings() {
 
           <div className="printer-settings__grid">
             <div className="form-group">
-              <label>Motor</label>
-              <select value={profile.engine || 'escpos'} onChange={(e) => update({ engine: e.target.value as any })}>
-                <option value="escpos">ESC/POS (recomendado - sem diálogo)</option>
-                <option value="html">HTML (compatibilidade)</option>
-              </select>
+              <label>Motor térmico</label>
+              <input type="text" value="RAW ESC/POS silencioso (monocromático)" readOnly />
+              <span className="printer-settings__hint">
+                Impressão térmica fixa em modo direto para POS 80mm e 58mm, sem janela de diálogo.
+              </span>
             </div>
 
             <div className="form-group">
@@ -184,6 +184,10 @@ export default function PrinterSettings() {
           </div>
         </>
       )}
+
+      <p className="printer-settings__tip">
+        Modo compatibilidade removido: a térmica trabalha sempre em <strong>RAW ESC/POS</strong>, silencioso e monocromático.
+      </p>
 
       <p className="printer-settings__tip">
         Dica: se estiver cortando o topo, coloque <strong>Offset Top</strong> positivo (ex: 1.0mm).
