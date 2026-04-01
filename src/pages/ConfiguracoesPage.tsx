@@ -566,49 +566,6 @@ function ConfiguracoesPage() {
                 {showCompanyAdvanced && (
                   <>
                     <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                      <label>Logo da empresa (opcional)</label>
-                      <div className="company-logo-upload">
-                        <input
-                          ref={logoFileRef}
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                          onChange={(e) => void handleLogoFileChange(e)}
-                          disabled={companySaving}
-                          className="company-logo-upload__input"
-                        />
-
-                        <div className="company-logo-upload__actions">
-                          <button
-                            type="button"
-                            className="btn-secondary"
-                            onClick={() => logoFileRef.current?.click()}
-                            disabled={companySaving}
-                          >
-                            Escolher logo
-                          </button>
-
-                          {companyForm.logo_url && (
-                            <button
-                              type="button"
-                              className="btn-secondary"
-                              onClick={clearCompanyLogo}
-                              disabled={companySaving}
-                            >
-                              Remover logo
-                            </button>
-                          )}
-                        </div>
-
-                        <span className="company-logo-upload__file-name">
-                          {logoFileName || (companyForm.logo_url ? 'Logo pronta para salvar.' : 'PNG, JPG, WEBP ou SVG. Ajuste automatico para impressao.')}
-                        </span>
-                        <div className="company-logo-upload__status">
-                          {companyForm.logo_url ? 'Logo cadastrada e pronta para os layouts de impressao.' : 'Sem logo cadastrada. O sistema imprime normalmente mesmo sem logo.'}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                       <label>Mensagem do Rodapé (opcional)</label>
                       <textarea
                         value={companyForm.mensagem_rodape}
