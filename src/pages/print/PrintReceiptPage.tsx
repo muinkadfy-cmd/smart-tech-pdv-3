@@ -9,7 +9,7 @@ const PAGE_STYLE_ID = 'smart-tech-thermal-page-style';
 
 function updateThermalPageStyle(paperWidth: '58' | '80', paperHeightMm: number) {
   const widthMm = paperWidth === '80' ? 80 : 58;
-  const safeHeight = Math.max(60, Number.isFinite(paperHeightMm) ? paperHeightMm : 120);
+  const safeHeight = Math.max(28, Number.isFinite(paperHeightMm) ? paperHeightMm : 90);
   const css = `@page { size: ${widthMm}mm ${safeHeight.toFixed(2)}mm; margin: 0; }`;
 
   let styleEl = document.getElementById(PAGE_STYLE_ID) as HTMLStyleElement | null;
@@ -89,16 +89,29 @@ export default function PrintReceiptPage() {
       if (!receipt) return;
       const heightPx = receipt.scrollHeight;
       const pxToMm = 25.4 / 96;
-      const extraTailMm = settings.showFooterCut ? 10 : 6;
+      const extraTailMm = settings.showFooterCut ? 4 : 2.5;
       const totalHeightMm = (heightPx * pxToMm) + extraTailMm;
       updateThermalPageStyle(settings.paperWidth, totalHeightMm);
       document.documentElement.style.setProperty('--thermal-paper-height-mm', `${totalHeightMm.toFixed(2)}mm`);
     }, 40);
 
     const autoClose = settings.autoCloseAfterPrint;
+    const returnTo = searchParams.get('returnTo')?.trim() || '';
     const onAfterPrint = () => {
       if (autoClose) {
-        setTimeout(() => window.close(), 250);
+        setTimeout(() => {
+          if (window.opener && !window.opener.closed) {
+            window.close();
+            return;
+          }
+          if (returnTo) {
+            window.location.replace(returnTo);
+            return;
+          }
+          if (window.history.length > 1) {
+            window.history.back();
+          }
+        }, 220);
       }
     };
 
@@ -114,7 +127,7 @@ export default function PrintReceiptPage() {
       window.clearTimeout(timer);
       window.removeEventListener('afterprint', onAfterPrint);
     };
-  }, [loading, error, model, settings.autoCloseAfterPrint]);
+  }, [loading, error, model, searchParams, settings.autoCloseAfterPrint, settings.showFooterCut, settings.paperWidth]);
 
   if (loading) {
     return <div className="thermal-print-page"><div className="thermal-print-page__status">Preparando cupom…</div></div>;

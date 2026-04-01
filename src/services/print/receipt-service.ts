@@ -21,6 +21,9 @@ function buildPrintRoute(request: PrintReceiptRequest) {
     profile,
   });
   if (storeId) params.set('store', storeId);
+  if (typeof window !== 'undefined') {
+    params.set('returnTo', `${window.location.pathname}${window.location.search}`);
+  }
   return `/print/${request.type}/${encodeURIComponent(request.id)}?${params.toString()}`;
 }
 
@@ -40,12 +43,5 @@ export async function printReceipt(request: PrintReceiptRequest): Promise<void> 
   }
 
   const route = buildPrintRoute(request);
-  const features = paperWidth === '80'
-    ? 'width=540,height=820,noopener,noreferrer'
-    : 'width=460,height=820,noopener,noreferrer';
-
-  const popup = window.open(route, '_blank', features);
-  if (!popup) {
-    window.location.assign(route);
-  }
+  window.location.assign(route);
 }

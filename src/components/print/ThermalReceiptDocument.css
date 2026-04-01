@@ -4,7 +4,7 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 16px 12px 28px;
+  padding: 10px 10px 18px;
 }
 
 .thermal-receipt {
@@ -28,7 +28,7 @@
   width: var(--useful-width-mm);
   max-width: var(--useful-width-mm);
   margin: 0 auto;
-  padding: var(--inner-margin-mm) 0 4mm;
+  padding: var(--inner-margin-mm) 0 2mm;
 }
 
 .thermal-receipt__header,
@@ -36,20 +36,20 @@
 .thermal-receipt__totals,
 .thermal-receipt__notes,
 .thermal-receipt__footer {
-  margin-bottom: 3mm;
+  margin-bottom: 1.8mm;
 }
 
 .thermal-receipt__brand {
   text-align: center;
   border-bottom: 1px dashed #000;
-  padding-bottom: 2mm;
+  padding-bottom: 1.4mm;
 }
 
 .thermal-receipt__logo {
   display: block;
-  margin: 0 auto 2mm;
-  max-width: 22mm;
-  max-height: 12mm;
+  margin: 0 auto 1.2mm;
+  max-width: 18mm;
+  max-height: 10mm;
   object-fit: contain;
 }
 
@@ -71,12 +71,12 @@
   text-align: center;
   text-transform: uppercase;
   font-weight: 700;
-  margin-bottom: 1mm;
+  margin-bottom: 0.5mm;
 }
 
 .thermal-receipt__doc-number {
   text-align: center;
-  margin-bottom: 1mm;
+  margin-bottom: 0.5mm;
 }
 
 .thermal-receipt__section-label,
@@ -102,11 +102,11 @@
 .thermal-receipt__items {
   border-top: 1px dashed #000;
   border-bottom: 1px dashed #000;
-  padding: 2mm 0;
+  padding: 1.2mm 0;
 }
 
 .thermal-receipt__item {
-  margin-bottom: 2mm;
+  margin-bottom: 1.2mm;
 }
 
 .thermal-receipt__item:last-child {
@@ -119,18 +119,18 @@
 }
 
 .thermal-receipt__item-note {
-  margin-top: 0.5mm;
+  margin-top: 0.2mm;
   font-size: calc(var(--font-size-px) - 1px);
   word-break: break-word;
 }
 
 .thermal-receipt__totals {
   border-bottom: 1px dashed #000;
-  padding-bottom: 2mm;
+  padding-bottom: 1.2mm;
 }
 
 .thermal-receipt__summary-row--grand {
-  margin-top: 1mm;
+  margin-top: 0.4mm;
   font-size: calc(var(--font-size-px) + 2px);
   font-weight: 700;
 }
@@ -140,8 +140,8 @@
 }
 
 .thermal-receipt__cut {
-  margin-top: 2mm;
-  padding-top: 2mm;
+  margin-top: 1mm;
+  padding-top: 1mm;
   border-top: 1px dashed #000;
   font-size: calc(var(--font-size-px) - 2px);
   text-transform: uppercase;
