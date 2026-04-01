@@ -68,6 +68,10 @@ function uint8ToBinaryString(data: Uint8Array): string {
   return out;
 }
 
+function normalizePrinterName(value: unknown): string {
+  return String(value || '').trim();
+}
+
 export async function printViaQzTray(args: {
   scriptUrl: string;
   printerName: string;
@@ -79,7 +83,12 @@ export async function printViaQzTray(args: {
   const qz = await getQz(args.scriptUrl);
   await connectQzTray(args.scriptUrl);
 
-  const printer = await qz.printers.find(args.printerName);
+  const printers = await listQzPrinters(args.scriptUrl);
+  const printer = printers.find((item) => normalizePrinterName(item) === normalizePrinterName(args.printerName));
+  if (!printer) {
+    throw new Error(`A impressora "${args.printerName}" não foi encontrada no QZ Tray.`);
+  }
+
   const config = qz.configs.create(printer, {
     jobName: args.jobName,
     encoding: 'Cp1252',
@@ -93,6 +102,11 @@ export async function printViaQzTray(args: {
     'compact',
   );
 
-  const payload = [uint8ToBinaryString(bytes)];
+  const payload = [{
+    type: 'raw',
+    format: 'command',
+    flavor: 'plain',
+    data: uint8ToBinaryString(bytes),
+  }];
   await qz.print(config, payload);
 }
