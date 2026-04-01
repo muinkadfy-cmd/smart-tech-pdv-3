@@ -17,6 +17,7 @@ import { getWarrantySettings, upsertWarrantySettings } from '@/lib/settings';
 import { pessoasRepo, usadosRepo, usadosVendasRepo } from '@/lib/repositories';
 import { hydrateUiPref, readUiPrefBoolLocal, readUiPrefLocal, readUiPrefNumberLocal, setUiPref } from '@/lib/ui-prefs';
 import PasswordPrompt, { usePasswordPrompt } from '@/components/ui/PasswordPrompt';
+import { printReceipt } from '@/services/print/receipt-service';
 import Pagination from '@/components/ui/Pagination';
 import './UsadosPages.css';
 
@@ -114,6 +115,7 @@ function VendaUsadosPage() {
   const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>('dinheiro');
   const [saving, setSaving] = useState(false);
   const [lastPrint, setLastPrint] = useState<PrintData | null>(null);
+  const [lastSaleId, setLastSaleId] = useState<string | null>(null);
 
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -191,8 +193,10 @@ function VendaUsadosPage() {
         const usado = usadosData.find((u) => u.id === ultimaVenda.usadoId) || null;
         const comprador = pessoasData.find((p) => p.id === ultimaVenda.compradorId) || null;
         setLastPrint(buildPrintData({ venda: ultimaVenda, usado, comprador }));
+        setLastSaleId(ultimaVenda.id);
       } else {
         setLastPrint(null);
+        setLastSaleId(null);
       }
     } finally {
       isLoadingDataRef.current = false;
@@ -321,16 +325,36 @@ function VendaUsadosPage() {
     });
   };
 
-  const handleImprimirUltimaVenda = (paperSize?: TamanhoPapel) => {
+  const handleImprimirUltimaVenda = async (paperSize?: TamanhoPapel) => {
     if (!lastPrint) return;
+    if (paperSize === '58mm' || paperSize === '80mm') {
+      if (!lastSaleId) return;
+      await printReceipt({
+        type: 'used-sale',
+        id: lastSaleId,
+        paperWidth: paperSize === '80mm' ? '80' : '58',
+      });
+      return;
+    }
     handlePrintData(lastPrint, paperSize);
   };
 
-  const handleImprimirVenda = (venda: UsadoVenda, paperSize?: TamanhoPapel) => {
+  const handleImprimirVenda = async (venda: UsadoVenda, paperSize?: TamanhoPapel) => {
     const usado = todosUsados.find((u) => u.id === venda.usadoId) || null;
     const comprador = pessoas.find((p) => p.id === venda.compradorId) || null;
     const printData = buildPrintData({ venda, usado, comprador });
     setLastPrint(printData);
+    setLastSaleId(venda.id);
+
+    if (paperSize === '58mm' || paperSize === '80mm') {
+      await printReceipt({
+        type: 'used-sale',
+        id: venda.id,
+        paperWidth: paperSize === '80mm' ? '80' : '58',
+      });
+      return;
+    }
+
     handlePrintData(printData, paperSize);
   };
 
@@ -512,6 +536,7 @@ function VendaUsadosPage() {
       });
 
       setLastPrint(printData);
+      setLastSaleId(vendaRes.venda.id);
       setSuccessMessage('Venda registrada com sucesso!');
 
       setValorVenda('');

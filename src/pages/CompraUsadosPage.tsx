@@ -18,6 +18,7 @@ import { getMetrics, criarPeriodoPorTipo } from '@/lib/metrics';
 import PasswordPrompt, { usePasswordPrompt } from '@/components/ui/PasswordPrompt';
 import Pagination from '@/components/ui/Pagination';
 import { isBrowserOnlineSafe } from '@/lib/capabilities/runtime-remote-adapter';
+import { printReceipt } from '@/services/print/receipt-service';
 import './UsadosPages.css';
 
 const ITEMS_PER_PAGE = 12;
@@ -357,15 +358,23 @@ function CompraUsadosPage() {
     };
   };
 
-  const printUsado = (u: Usado, paperSize: '58mm' | '80mm' | 'A4') => {
-    const printMode = paperSize === '58mm' ? 'compact' : 'normal';
-    const printData = buildPrintDataFromUsado(u);
-    printDocument(printData, { printMode, paperSize });
+  const printUsado = async (u: Usado, paperSize: '58mm' | '80mm' | 'A4') => {
+    if (paperSize === 'A4') {
+      const printData = buildPrintDataFromUsado(u);
+      printDocument(printData, { printMode: 'normal', paperSize });
+      return;
+    }
+
+    await printReceipt({
+      type: 'used-purchase',
+      id: u.id,
+      paperWidth: paperSize === '80mm' ? '80' : '58',
+    });
   };
 
-  const handleImprimirUltimoCadastro = (paperSize: '58mm' | '80mm' | 'A4' = '80mm') => {
+  const handleImprimirUltimoCadastro = async (paperSize: '58mm' | '80mm' | 'A4' = '80mm') => {
     if (!lastCreated) return;
-    printUsado(lastCreated, paperSize);
+    await printUsado(lastCreated, paperSize);
   };
 
 

@@ -1,15 +1,25 @@
-import type { Cobranca, Cliente, OrdemServico, Recibo, Venda } from '@/types';
+import type { Cobranca, Cliente, OrdemServico, Pessoa, Recibo, Usado, UsadoVenda, Venda } from '@/types';
 import { getClientes } from '@/lib/clientes';
 import { getCobrancas } from '@/lib/cobrancas';
 import { fetchCompany } from '@/lib/company-service';
 import { formatCobrancaId } from '@/lib/format-display-id';
 import { formatVendaId } from '@/lib/format-display-id';
 import { getOrdensAsync } from '@/lib/ordens';
+import { getPessoas } from '@/lib/pessoas';
 import { getRecibos } from '@/lib/recibos';
+import { getUsadoById, getVendaUsadoById } from '@/lib/usados';
 import { getVendasAsync } from '@/lib/vendas';
 import type { EmpresaInfo, PrintData } from '@/lib/print-template';
 
-export type PrintableReceiptType = 'sale' | 'receipt' | 'service-order' | 'charge' | 'test';
+export type PrintableReceiptType =
+  | 'sale'
+  | 'receipt'
+  | 'service-order'
+  | 'service-order-checklist'
+  | 'charge'
+  | 'used-purchase'
+  | 'used-sale'
+  | 'test';
 
 export interface ThermalReceiptLineItem {
   label: string;
@@ -66,11 +76,20 @@ function getClienteById(clienteId?: string | null): Cliente | undefined {
   return (getClientes() ?? []).find((cliente) => cliente.id === clienteId);
 }
 
+function getPessoaById(pessoaId?: string | null): Pessoa | undefined {
+  if (!pessoaId) return undefined;
+  return (getPessoas() ?? []).find((pessoa) => pessoa.id === pessoaId);
+}
+
 function getClienteEndereco(cliente?: Cliente, snapshot?: string): string | undefined {
   if (snapshot?.trim()) return snapshot.trim();
   if (!cliente) return undefined;
   const parts = [cliente.endereco, cliente.cidade, cliente.estado].filter(Boolean);
   return parts.length ? parts.join(', ') : undefined;
+}
+
+function getPessoaEndereco(pessoa?: Pessoa): string | undefined {
+  return pessoa?.endereco?.trim() || undefined;
 }
 
 async function resolveCompanyInfo(): Promise<EmpresaInfo> {
@@ -287,6 +306,63 @@ export async function buildServiceOrderReceiptById(id: string): Promise<Resolved
   };
 }
 
+export async function buildServiceOrderChecklistById(id: string): Promise<ResolvedReceiptPrintData | null> {
+  const ordem = (await getOrdensAsync()).find((item) => item.id === id) || null;
+  if (!ordem) return null;
+
+  const cliente = getClienteById(ordem.clienteId);
+  const enderecoCliente = getClienteEndereco(cliente);
+  const company = await resolveCompanyInfo();
+  const acessorios = (ordem.acessorios || []).filter(Boolean);
+  const notes = [
+    ordem.equipamento ? `Equipamento: ${ordem.equipamento}` : '',
+    ordem.marca ? `Marca: ${ordem.marca}` : '',
+    ordem.modelo ? `Modelo: ${ordem.modelo}` : '',
+    ordem.cor ? `Cor: ${ordem.cor}` : '',
+    ordem.defeito ? `Defeito: ${ordem.defeito}` : '',
+    ordem.senhaCliente ? `Senha: ${ordem.senhaCliente}` : '',
+    acessorios.length ? `Acessórios: ${acessorios.join(', ')}` : 'Acessórios: nenhum informado',
+  ].filter(Boolean) as string[];
+
+  return {
+    printData: {
+      tipo: 'checklist',
+      numero: ordem.numero,
+      clienteNome: ordem.clienteNome,
+      clienteTelefone: ordem.clienteTelefone || cliente?.telefone,
+      clienteEndereco: enderecoCliente,
+      data: ordem.dataAbertura,
+      equipamento: ordem.equipamento,
+      marca: ordem.marca,
+      modelo: ordem.modelo,
+      cor: ordem.cor,
+      defeito: ordem.defeito,
+      senhaCliente: ordem.senhaCliente,
+      acessorios,
+    },
+    thermalModel: {
+      type: 'service-order-checklist',
+      title: 'Checklist de entrada',
+      documentNumber: ordem.numero,
+      dateLabel: formatDateLabel(ordem.dataAbertura),
+      customerName: ordem.clienteNome,
+      customerPhone: ordem.clienteTelefone || cliente?.telefone,
+      customerAddress: enderecoCliente,
+      company,
+      items: [
+        {
+          label: ordem.equipamento || 'Equipamento em análise',
+          total: 0,
+          note: [ordem.marca, ordem.modelo, ordem.cor].filter(Boolean).join(' | ') || undefined,
+        },
+      ],
+      total: 0,
+      notes,
+      footerMessage: company.slogan || 'Obrigado pela preferencia. Volte sempre.',
+    },
+  };
+}
+
 export async function buildChargeReceiptById(id: string): Promise<ResolvedReceiptPrintData | null> {
   const cobranca = (getCobrancas() ?? []).find((item) => item.id === id) as Cobranca | undefined;
   if (!cobranca) return null;
@@ -341,6 +417,129 @@ export async function buildChargeReceiptById(id: string): Promise<ResolvedReceip
   };
 }
 
+export async function buildUsedPurchaseReceiptById(id: string): Promise<ResolvedReceiptPrintData | null> {
+  const usado = getUsadoById(id);
+  if (!usado) return null;
+
+  const vendedor = getPessoaById(usado.vendedorId);
+  const company = await resolveCompanyInfo();
+  const numero = `UC-${String(usado.id).slice(-6).toUpperCase()}`;
+  const detalhes = [usado.imei ? `IMEI: ${usado.imei}` : '', usado.descricao || '']
+    .filter(Boolean)
+    .join(' | ');
+
+  return {
+    printData: {
+      tipo: 'comprovante',
+      numero,
+      clienteNome: vendedor?.nome,
+      clienteTelefone: vendedor?.telefone,
+      clienteEndereco: getPessoaEndereco(vendedor),
+      cpfCnpj: vendedor?.cpfCnpj,
+      data: usado.created_at,
+      itens: [
+        {
+          nome: usado.titulo,
+          quantidade: 1,
+          preco: Number(usado.valorCompra || 0),
+          descricao: detalhes || undefined,
+        },
+      ],
+      valorTotal: Number(usado.valorCompra || 0),
+      formaPagamento: 'COMPRA (USADO)',
+      termosCompra: usado.termos_compra_snapshot?.trim() || undefined,
+      observacoes: usado.descricao?.trim() || undefined,
+    },
+    thermalModel: {
+      type: 'used-purchase',
+      title: 'Comprovante de compra',
+      documentNumber: numero,
+      dateLabel: formatDateLabel(usado.created_at),
+      customerName: vendedor?.nome,
+      customerPhone: vendedor?.telefone,
+      customerAddress: getPessoaEndereco(vendedor),
+      company,
+      items: [
+        {
+          label: usado.titulo,
+          quantity: 1,
+          unitPrice: Number(usado.valorCompra || 0),
+          total: Number(usado.valorCompra || 0),
+          note: detalhes || undefined,
+        },
+      ],
+      total: Number(usado.valorCompra || 0),
+      paymentLabel: 'COMPRA (USADO)',
+      notes: [usado.termos_compra_snapshot, usado.descricao].filter(Boolean) as string[],
+      footerMessage: company.slogan || 'Obrigado pela preferencia. Volte sempre.',
+    },
+  };
+}
+
+export async function buildUsedSaleReceiptById(id: string): Promise<ResolvedReceiptPrintData | null> {
+  const venda = getVendaUsadoById(id);
+  if (!venda) return null;
+
+  const usado = getUsadoById(venda.usadoId) as Usado | null;
+  const comprador = getPessoaById(venda.compradorId);
+  const company = await resolveCompanyInfo();
+  const numero = `UV-${String(venda.id).slice(-6).toUpperCase()}`;
+  const garantia = venda.warranty_months
+    ? `${venda.warranty_months} ${venda.warranty_months === 1 ? 'mês' : 'meses'}`
+    : undefined;
+  const detalhes = [usado?.imei ? `IMEI: ${usado.imei}` : '', usado?.descricao || '']
+    .filter(Boolean)
+    .join(' | ');
+
+  return {
+    printData: {
+      tipo: 'venda',
+      numero,
+      clienteNome: comprador?.nome || 'Cliente',
+      clienteTelefone: comprador?.telefone,
+      clienteEndereco: getPessoaEndereco(comprador),
+      cpfCnpj: comprador?.cpfCnpj,
+      data: venda.dataVenda,
+      itens: [
+        {
+          nome: usado?.titulo || 'Item vendido',
+          quantidade: 1,
+          preco: Number(venda.valorVenda || 0),
+          descricao: detalhes || undefined,
+        },
+      ],
+      valorTotal: Number(venda.valorVenda || 0),
+      formaPagamento: venda.formaPagamento,
+      garantia,
+      termosGarantia: venda.warranty_terms?.trim() || undefined,
+      observacoes: venda.observacoes?.trim() || undefined,
+    },
+    thermalModel: {
+      type: 'used-sale',
+      title: 'Comprovante de venda',
+      documentNumber: numero,
+      dateLabel: formatDateLabel(venda.dataVenda),
+      customerName: comprador?.nome || 'Cliente',
+      customerPhone: comprador?.telefone,
+      customerAddress: getPessoaEndereco(comprador),
+      company,
+      items: [
+        {
+          label: usado?.titulo || 'Item vendido',
+          quantity: 1,
+          unitPrice: Number(venda.valorVenda || 0),
+          total: Number(venda.valorVenda || 0),
+          note: detalhes || undefined,
+        },
+      ],
+      total: Number(venda.valorVenda || 0),
+      paymentLabel: venda.formaPagamento ? String(venda.formaPagamento).toUpperCase() : undefined,
+      notes: [garantia, venda.warranty_terms, venda.observacoes].filter(Boolean) as string[],
+      footerMessage: company.slogan || 'Obrigado pela preferencia. Volte sempre.',
+    },
+  };
+}
+
 export async function buildTestReceipt(): Promise<ResolvedReceiptPrintData> {
   const company = await resolveCompanyInfo();
   const now = new Date().toISOString();
@@ -388,7 +587,10 @@ export async function resolveReceiptPrintData(type: PrintableReceiptType, id: st
   if (type === 'sale') return buildSaleReceiptById(id);
   if (type === 'receipt') return buildReceiptById(id);
   if (type === 'service-order') return buildServiceOrderReceiptById(id);
+  if (type === 'service-order-checklist') return buildServiceOrderChecklistById(id);
   if (type === 'charge') return buildChargeReceiptById(id);
+  if (type === 'used-purchase') return buildUsedPurchaseReceiptById(id);
+  if (type === 'used-sale') return buildUsedSaleReceiptById(id);
   if (type === 'test') return buildTestReceipt();
   return null;
 }

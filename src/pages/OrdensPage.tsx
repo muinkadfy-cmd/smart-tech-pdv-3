@@ -23,7 +23,6 @@ import Guard from '@/components/Guard';
 import ReadOnlyBanner from '@/components/ReadOnlyBanner';
 import { showToast } from '@/components/ui/ToastContainer';
 import PasswordPrompt, { usePasswordPrompt } from '@/components/ui/PasswordPrompt';
-import { PrintData, printDocument } from '@/lib/print-template';
 import { usePagination } from '@/hooks/usePagination';
 import { useDebounce } from '@/hooks/useDebounce';
 import { SearchBar } from '@/components/SearchBar';
@@ -895,21 +894,9 @@ function OrdensPage() {
   };
 
   const handleImprimirChecklist = async (ordem: OrdemServico, compact: boolean = false) => {
-    const cliente = clientes.find(c => c.id === ordem.clienteId);
-    const clienteTelefone = ordem.clienteTelefone || cliente?.telefone;
-
-    const printData: PrintData = {
-      tipo: 'checklist',
-      numero: ordem.numero,
-      clienteNome: ordem.clienteNome,
-      clienteTelefone: clienteTelefone,
-      senhaCliente: ordem.senhaCliente,
-      senhaPadrao: ordem.senhaPadrao || undefined,
-      acessorios: ordem.acessorios || []
-    };
-
-    printDocument(printData, compact ? { printMode: 'compact' } : undefined);
-};
+    void compact;
+    await printReceipt({ type: 'service-order-checklist', id: ordem.id });
+  };
 
 
   const readOnly = isReadOnlyMode();
