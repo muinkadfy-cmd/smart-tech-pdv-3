@@ -20,13 +20,13 @@ function getStoreIdOrThrow(): string {
 export function getDefaultWarrantySettings(storeId: string): WarrantySettings {
   // Texto padrão (editável) dos Termos de Garantia impresso na OS.
   // Obs: o usuário ainda pode personalizar em Configurações → Termos de Garantia.
-  const termosDefault = `🛡️ TERMOS DE GARANTIA — 90 DIAS
-A garantia é de 90 dias a partir da data de entrega e cobre exclusivamente o serviço realizado e/ou a peça substituída pela assistência, mediante avaliação técnica.
-
-Cobre: defeito diretamente relacionado ao reparo e/ou peça fornecida com falha no prazo.
-Não cobre: quedas/impactos, líquidos/oxidação, mau uso, acessórios inadequados, violação/lacre, intervenção de terceiros, falhas de software e defeitos não ligados ao serviço.
-
-Para validação: apresentação do comprovante e avaliação técnica da loja.`;
+  const termosDefault = `TERMO DE GARANTIA
+GARANTIA: [30 A 90] DIAS
+COBRE DEFEITO FUNCIONAL.
+NAO COBRE QUEDA, TELA,
+AGUA, MAU USO OU
+VIOLACAO DO APARELHO.
+APRESENTAR COMPROVANTE.`;
 
   return {
     id: storeId,
@@ -82,8 +82,13 @@ export async function getWarrantySettings(): Promise<{ success: boolean; data?: 
         txt.startsWith('DIREITOS DE REGISTRO') ||
         txt.includes('Lei nº 9.610/98') ||
         txt.includes('Direitos Autorais');
+      const previousDefaultWarranty =
+        txt.startsWith('🛡️ TERMOS DE GARANTIA — 90 DIAS') ||
+        txt.includes('A garantia é de 90 dias a partir da data de entrega') ||
+        txt.includes('Cobre: defeito diretamente relacionado ao reparo') ||
+        txt.includes('Para validação: apresentação do comprovante');
 
-      if (local && isLegacyRights) {
+      if (local && (isLegacyRights || previousDefaultWarranty)) {
         const migrated: WarrantySettings = {
           ...local,
           warranty_terms: getDefaultWarrantySettings(storeId).warranty_terms

@@ -321,6 +321,7 @@ export async function buildServiceOrderChecklistById(id: string): Promise<Resolv
     ordem.cor ? `Cor: ${ordem.cor}` : '',
     ordem.defeito ? `Defeito: ${ordem.defeito}` : '',
     ordem.senhaCliente ? `Senha: ${ordem.senhaCliente}` : '',
+    ordem.senhaPadrao ? 'Padrão de desbloqueio informado' : '',
     acessorios.length ? `Acessórios: ${acessorios.join(', ')}` : 'Acessórios: nenhum informado',
   ].filter(Boolean) as string[];
 
@@ -338,6 +339,7 @@ export async function buildServiceOrderChecklistById(id: string): Promise<Resolv
       cor: ordem.cor,
       defeito: ordem.defeito,
       senhaCliente: ordem.senhaCliente,
+      senhaPadrao: ordem.senhaPadrao,
       acessorios,
     },
     thermalModel: {
