@@ -240,11 +240,11 @@ function AtualizacoesPage() {
                 <strong>Como atualizar (passo a passo):</strong>
                 <ol style={{ margin: '6px 0 0 18px' }}>
                   <li>Clique em <strong>“Atualizar agora”</strong> (acima).</li>
-                  <li>Aguarde recarregar.</li>
+                  <li>Aguarde de <strong>10 a 20 segundos</strong> enquanto o app atualiza e recarrega.</li>
                   <li>Depois clique em <strong>“Marcar como lido”</strong>.</li>
                 </ol>
                 <div style={{ marginTop: 6 }}>
-                  Dica (iPhone/PWA): se não atualizar, feche o app e abra novamente.
+                  Se demorar além disso, feche o app e abra novamente.
                 </div>
               </div>
             </div>

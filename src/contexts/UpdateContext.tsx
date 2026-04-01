@@ -266,7 +266,7 @@ export function UpdateProvider({ children }: { children: React.ReactNode }) {
     // 1) Fluxo preferencial: função exposta pelo main.tsx (vite-plugin-pwa registerSW)
     const updateFn = (window as any)?.__SMARTTECH_UPDATE_SW__;
     if (typeof updateFn === 'function') {
-      showToast('🔄 Aplicando atualização do app…', 'info', 4500);
+      showToast('🔄 Atualizando o app. Aguarde de 10 a 20 segundos e não feche a tela.', 'info', 6000);
 
       // Watchdog: se não recarregar, faz “reparo hard” (evita ficar preso em build antigo)
       try {
@@ -278,7 +278,7 @@ export function UpdateProvider({ children }: { children: React.ReactNode }) {
             // ignore
           }
           try {
-            showToast('⚠️ Atualização parece ter travado. Limpando cache e recarregando…', 'warning', 6500);
+            showToast('⚠️ A atualização demorou mais que o esperado. Vamos limpar o cache e recarregar o app.', 'warning', 6500);
           } catch {
             // ignore
           }
