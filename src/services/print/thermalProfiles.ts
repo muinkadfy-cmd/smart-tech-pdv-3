@@ -3,7 +3,8 @@ export type ThermalPaperWidth = '58' | '80';
 export type ThermalPrinterProfileId =
   | 'generic-pos-58'
   | 'generic-pos-80'
-  | 'epson-tm-t20';
+  | 'epson-tm-t20'
+  | 'goldensky-58';
 
 export interface ThermalPrinterProfile {
   id: ThermalPrinterProfileId;
@@ -43,6 +44,15 @@ export const THERMAL_PRINTER_PROFILES: Record<ThermalPrinterProfileId, ThermalPr
     fontSizePx: 12,
     lineHeight: 1.22,
   },
+  'goldensky-58': {
+    id: 'goldensky-58',
+    label: 'Goldensky / Gprinter 58mm',
+    defaultPaperWidth: '58',
+    usefulWidthMm: 48,
+    innerMarginMm: 1.5,
+    fontSizePx: 11,
+    lineHeight: 1.18,
+  },
 };
 
 export function getThermalPrinterProfile(profileId?: string | null): ThermalPrinterProfile {
@@ -52,3 +62,15 @@ export function getThermalPrinterProfile(profileId?: string | null): ThermalPrin
   return THERMAL_PRINTER_PROFILES['generic-pos-58'];
 }
 
+export function detectThermalPrinterBrand(printerName?: string | null): string {
+  const raw = String(printerName ?? '').trim();
+  const normalized = raw.toLowerCase();
+
+  if (!raw) return 'Marca/modelo ainda não identificado';
+  if (normalized.includes('epson') || normalized.includes('tm-t20')) return 'Identificação provável: Epson TM-T20';
+  if (normalized.includes('goldensky') || normalized.includes('gprinter') || normalized.includes('gp-')) return 'Identificação provável: Goldensky / Gprinter';
+  if (normalized.includes('pos-58') || normalized.includes('58mm')) return 'Identificação provável: impressora térmica 58mm';
+  if (normalized.includes('pos-80') || normalized.includes('80mm')) return 'Identificação provável: impressora térmica 80mm';
+
+  return `Modelo detectado pelo nome do Windows/QZ: ${raw}`;
+}

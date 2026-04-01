@@ -4,7 +4,7 @@ import { isDesktopApp } from '@/lib/platform';
 import { useCompany } from '@/contexts/CompanyContext';
 import { isQzTrayAvailable, listQzPrinters } from '@/services/print/qzTrayService';
 import { openPrintTest } from '@/services/print/receipt-service';
-import { THERMAL_PRINTER_PROFILES } from '@/services/print/thermalProfiles';
+import { detectThermalPrinterBrand, THERMAL_PRINTER_PROFILES } from '@/services/print/thermalProfiles';
 import './ThermalPrintSettings.css';
 
 export default function ThermalPrintSettings() {
@@ -23,6 +23,7 @@ export default function ThermalPrintSettings() {
   }, [qzPrinters, settings.qzPrinterName]);
   const economyModeActive = settings.printDensity === 'compact' && settings.fontSizePx <= 10 && settings.innerMarginMm <= 1.5;
   const activeProfile = THERMAL_PRINTER_PROFILES[settings.printerProfile];
+  const detectedPrinterText = detectThermalPrinterBrand(settings.qzPrinterName);
   const logoStatus = !settings.showLogo
     ? 'Logo desativada nesta impressão'
     : company?.logo_url
@@ -117,6 +118,10 @@ export default function ThermalPrintSettings() {
         <div className="thermal-settings__summary-item">
           <span>Impressora</span>
           <strong>{settings.qzPrinterName || 'Não selecionada'}</strong>
+        </div>
+        <div className="thermal-settings__summary-item">
+          <span>Marca / modelo</span>
+          <strong>{detectedPrinterText}</strong>
         </div>
         <div className="thermal-settings__summary-item">
           <span>Modo</span>
@@ -276,6 +281,9 @@ export default function ThermalPrintSettings() {
               <span className="thermal-settings__status">
                 Essa impressora será usada no modo RAW/BT do navegador.
               </span>
+              <span className="thermal-settings__status">
+                {detectedPrinterText}
+              </span>
             </div>
           </div>
         </div>
@@ -388,7 +396,7 @@ export default function ThermalPrintSettings() {
       ) : null}
 
       <div className="thermal-settings__footnote">
-        Base útil recomendada: 48mm para POS-58 e 72mm para 80mm/Epson TM-T20. O modo compatível com diálogo foi removido da térmica.
+        Base útil recomendada: 48mm para POS-58/Goldensky 58 e 72mm para 80mm/Epson TM-T20. O modo compatível com diálogo foi removido da térmica.
       </div>
     </section>
   );
