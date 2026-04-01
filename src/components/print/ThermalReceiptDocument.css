@@ -155,39 +155,11 @@
   margin-bottom: 0.8mm;
 }
 
-.thermal-pattern__canvas {
-  position: relative;
-  width: 56px;
-  height: 56px;
-}
-
-.thermal-pattern__lines {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.thermal-pattern__path {
-  stroke: #000;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-}
-
-.thermal-pattern__dot {
-  position: absolute;
-  border: 1px solid #000;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(var(--font-size-px) - 2px);
-  font-weight: 700;
-}
-
-.thermal-pattern__dot.is-active {
-  background: #000;
-  color: #fff;
+.thermal-pattern__numbers {
+  margin: 0;
+  font: 700 calc(var(--font-size-px) + 1px) / 1.6 "Courier New", "Lucida Console", monospace;
+  letter-spacing: 0.6px;
+  white-space: pre;
 }
 
 .thermal-receipt__cut {

@@ -283,62 +283,24 @@ function addPatternOrderGrid(dst: number[], rawPattern: string, width: number) {
   const end = pts.length;
 
   escBold(dst, true);
-  addText(dst, "PADRAO (9 BOLINHAS):");
+  addText(dst, "PADRAO (9 PONTOS):");
   lf(dst, 1);
   escBold(dst, false);
 
-  addText(dst, `INICIO: (${start})   FIM: (${end})`);
+  addText(dst, `INICIO: ${start}   FIM: ${end}`);
   lf(dst, 1);
 
-  const seqHuman = pts.map((p) => String(p + 1)).join("-");
-  addText(dst, `SEQ (TEC 1-9): ${seqHuman}`);
-  lf(dst, 1);
-
-  const cell = (i: number) => {
-    const n = order[i];
-    return n ? `(${n})` : "( )";
-  };
-
-  // 3x3
-  addText(dst, `${cell(0)} ${cell(1)} ${cell(2)}`); lf(dst, 1);
-  addText(dst, `${cell(3)} ${cell(4)} ${cell(5)}`); lf(dst, 1);
-  addText(dst, `${cell(6)} ${cell(7)} ${cell(8)}`); lf(dst, 1);
-
-  const grid = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => " "));
-  const nodeChar = (idx: number) => (order[idx] ? "O" : "o");
-  const coords = [
-    [0, 0], [2, 0], [4, 0],
-    [0, 2], [2, 2], [4, 2],
-    [0, 4], [2, 4], [4, 4],
-  ] as const;
-
-  coords.forEach(([x, y], idx) => {
-    grid[y][x] = nodeChar(idx);
-  });
-
-  const connector = (a: number, b: number) => {
-    const [ax, ay] = coords[a];
-    const [bx, by] = coords[b];
-    const dx = Math.sign(bx - ax);
-    const dy = Math.sign(by - ay);
-    const steps = Math.max(Math.abs(bx - ax), Math.abs(by - ay));
-    const char = dx !== 0 && dy !== 0 ? (dx === dy ? "\\" : "/") : dx !== 0 ? "-" : "|";
-
-    for (let step = 1; step < steps; step++) {
-      const x = ax + dx * step;
-      const y = ay + dy * step;
-      if (grid[y]?.[x] === " ") grid[y][x] = char;
-    }
-  };
-
-  for (let i = 0; i < pts.length - 1; i++) {
-    connector(pts[i], pts[i + 1]);
-  }
-
-  lf(dst, 1);
-  addText(dst, "DESENHO:"); lf(dst, 1);
-  for (const row of grid) {
-    addText(dst, row.join(" "));
+  const rows = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+  ];
+  for (const row of rows) {
+    const line = row
+      .map((idx) => (order[idx] || " ").padStart(2, " "))
+      .join("  ")
+      .trimEnd();
+    addText(dst, line);
     lf(dst, 1);
   }
 }

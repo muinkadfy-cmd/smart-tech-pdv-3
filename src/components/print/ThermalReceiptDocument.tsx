@@ -27,6 +27,15 @@ function getPatternPointPosition(point: number) {
   };
 }
 
+function buildPatternOrderGrid(pattern: number[]): string[] {
+  const grid = Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => ' '));
+  pattern.forEach((point, index) => {
+    const { col, row } = getPatternPointPosition(point);
+    grid[row][col] = String(index + 1);
+  });
+  return grid.map((row) => row.map((cell) => cell.padStart(2, ' ')).join('  ').trimEnd());
+}
+
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -41,10 +50,7 @@ export default function ThermalReceiptDocument({ model, settings }: ThermalRecei
   const checklistPattern = model.type === 'service-order-checklist'
     ? parsePattern(model.checklistPattern)
     : [];
-  const patternCell = 18;
-  const patternRadius = 6;
-  const patternPadding = 10;
-  const patternSize = patternPadding * 2 + patternCell * 2;
+  const checklistPatternGrid = buildPatternOrderGrid(checklistPattern);
   const densityVars = settings.printDensity === 'compact'
     ? {
         sectionGap: '0.72mm',
@@ -237,51 +243,9 @@ export default function ThermalReceiptDocument({ model, settings }: ThermalRecei
             {checklistPattern.length ? (
               <div className="thermal-pattern" aria-label="Padrao de 9 pontos">
                 <div className="thermal-pattern__label">Padrao 9 pontos</div>
-                <div className="thermal-pattern__canvas">
-                  <svg
-                    className="thermal-pattern__lines"
-                    viewBox={`0 0 ${patternSize} ${patternSize}`}
-                    aria-hidden="true"
-                  >
-                    {checklistPattern.slice(0, -1).map((point, index) => {
-                      const next = checklistPattern[index + 1];
-                      const from = getPatternPointPosition(point);
-                      const to = getPatternPointPosition(next);
-                      const x1 = patternPadding + from.col * patternCell;
-                      const y1 = patternPadding + from.row * patternCell;
-                      const x2 = patternPadding + to.col * patternCell;
-                      const y2 = patternPadding + to.row * patternCell;
-                      return (
-                        <line
-                          key={`${point}-${next}-${index}`}
-                          x1={x1}
-                          y1={y1}
-                          x2={x2}
-                          y2={y2}
-                          className="thermal-pattern__path"
-                        />
-                      );
-                    })}
-                  </svg>
-                  {Array.from({ length: 9 }, (_, index) => {
-                    const point = index + 1;
-                    const order = checklistPattern.indexOf(point);
-                    return (
-                      <div
-                        key={point}
-                        className={`thermal-pattern__dot${order >= 0 ? ' is-active' : ''}`}
-                        style={{
-                          left: `${patternPadding + (index % 3) * patternCell}px`,
-                          top: `${patternPadding + Math.floor(index / 3) * patternCell}px`,
-                          width: `${patternRadius * 2}px`,
-                          height: `${patternRadius * 2}px`,
-                        }}
-                      >
-                        {order >= 0 ? order + 1 : ''}
-                      </div>
-                    );
-                  })}
-                </div>
+                <pre className="thermal-pattern__numbers">
+                  {checklistPatternGrid.join('\n')}
+                </pre>
               </div>
             ) : null}
           </section>
