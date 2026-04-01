@@ -220,31 +220,43 @@ function AtualizacoesPage() {
         </div>
 
         {updateAvailable ? (
-          <div className="updates-callout warn">
-            <span className="updates-callout-icon">⬆️</span>
-            <div>
-              <strong>{updateLabel}</strong>
-              <div className="muted small">
-                {isNewVersion ? (
-                  <>
-                    Você está em <span className="mono">{currentVersion}</span> e há uma nova versão no servidor.
-                  </>
-                ) : (
-                  <>
-                    Sua base continua em <span className="mono">{currentBaseVersion}</span>, mas existe um build de manutenção mais novo no servidor.
-                  </>
-                )}
-                {sinceCount > 0 ? ` (${sinceCount} mudança(s) no changelog)` : ''}
+          <div className="updates-callout-stack">
+            <div className="updates-callout warn">
+              <span className="updates-callout-icon">⬆️</span>
+              <div>
+                <strong>{updateLabel}</strong>
+                <div className="muted small">
+                  {isNewVersion ? (
+                    <>
+                      Você está em <span className="mono">{currentVersion}</span> e há uma nova versão no servidor.
+                    </>
+                  ) : (
+                    <>
+                      Sua base continua em <span className="mono">{currentBaseVersion}</span>, mas existe um build de manutenção mais novo no servidor.
+                    </>
+                  )}
+                  {sinceCount > 0 ? ` (${sinceCount} mudança(s) no changelog)` : ''}
+                </div>
+                <div className="muted small" style={{ marginTop: 8 }}>
+                  <strong>Como atualizar:</strong>
+                  <ol style={{ margin: '6px 0 0 18px' }}>
+                    <li>Faça um <strong>backup</strong> antes de atualizar.</li>
+                    <li>Clique em <strong>“Atualizar agora”</strong>.</li>
+                    <li>Aguarde de <strong>10 a 20 segundos</strong> enquanto o app atualiza e recarrega.</li>
+                    <li>Depois clique em <strong>“Marcar como lido”</strong>.</li>
+                  </ol>
+                </div>
               </div>
-              <div className="muted small" style={{ marginTop: 8 }}>
-                <strong>Como atualizar (passo a passo):</strong>
-                <ol style={{ margin: '6px 0 0 18px' }}>
-                  <li>Clique em <strong>“Atualizar agora”</strong> (acima).</li>
-                  <li>Aguarde de <strong>10 a 20 segundos</strong> enquanto o app atualiza e recarrega.</li>
-                  <li>Depois clique em <strong>“Marcar como lido”</strong>.</li>
-                </ol>
-                <div style={{ marginTop: 6 }}>
-                  Se demorar além disso, feche o app e abra novamente.
+            </div>
+
+            <div className="updates-callout danger">
+              <span className="updates-callout-icon">⚠️</span>
+              <div>
+                <div className="updates-callout-title">Alerta importante antes de atualizar</div>
+                <div className="updates-callout-sub">
+                  Recomendamos fazer backup antes da atualização. Se o processo for interrompido ou o app fechar no meio,
+                  pode haver risco de inconsistência temporária em movimentações do <strong>fluxo de caixa</strong>,
+                  <strong> financeiro</strong> e outros dados recentes.
                 </div>
               </div>
             </div>

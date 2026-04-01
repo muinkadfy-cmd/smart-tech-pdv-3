@@ -230,9 +230,19 @@
   margin: 10px 0 2px 0;
 }
 
+.updates-callout-stack {
+  display: grid;
+  gap: 10px;
+}
+
 .updates-callout.warn{
   border-color: rgba(245,158,11,0.35);
   background: rgba(245,158,11,0.10);
+}
+
+.updates-callout.danger{
+  border-color: rgba(239,68,68,0.42);
+  background: rgba(239,68,68,0.12);
 }
 
 .updates-callout.ok{
