@@ -9,6 +9,7 @@ export default function ThermalPrintSettings() {
   const { settings, saving, update, applyProfile } = usePrintSettings();
   const [qzStatus, setQzStatus] = useState<'idle' | 'checking' | 'ready' | 'missing'>('idle');
   const [qzPrinters, setQzPrinters] = useState<string[]>([]);
+  const qzDownloadUrl = 'https://github.com/qzind/tray/releases/download/v2.2.5/qz-tray-2.2.5-x86_64.exe';
 
   const profileOptions = useMemo(() => Object.values(THERMAL_PRINTER_PROFILES), []);
 
@@ -128,6 +129,31 @@ export default function ThermalPrintSettings() {
 
         {settings.backend === 'qz-tray' ? (
           <div className="form-group">
+            <div className="thermal-settings__qz-guide">
+              <div className="thermal-settings__qz-guide-head">
+                <div>
+                  <strong>QZ Tray para impressão RAW/BT</strong>
+                  <p>Instale o QZ Tray no Windows para imprimir em modo térmico profissional, sem depender do layout do navegador.</p>
+                </div>
+                <a
+                  className="thermal-settings__qz-download"
+                  href={qzDownloadUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Baixar QZ Tray 2.2.5
+                </a>
+              </div>
+
+              <ol className="thermal-settings__qz-steps">
+                <li>Baixe e instale o QZ Tray no computador da impressora.</li>
+                <li>Abra o QZ Tray e deixe o ícone ativo ao lado do relógio do Windows.</li>
+                <li>Clique em <strong>Testar QZ Tray</strong> para confirmar a conexão.</li>
+                <li>Clique em <strong>Carregar impressoras QZ</strong> e selecione a sua POS-58, POS-80 ou Epson.</li>
+                <li>Faça uma impressão de teste. Se abrir permissão do QZ, marque para confiar no sistema.</li>
+              </ol>
+            </div>
+
             <label>Script do QZ Tray</label>
             <input
               type="url"

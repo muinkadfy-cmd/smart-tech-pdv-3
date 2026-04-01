@@ -82,3 +82,61 @@
   display: grid;
   gap: 0.35rem;
 }
+
+.thermal-settings__qz-guide {
+  margin-bottom: 1rem;
+  padding: 0.95rem;
+  border-radius: 16px;
+  border: 1px solid rgba(90, 210, 150, 0.18);
+  background:
+    linear-gradient(135deg, rgba(16, 44, 34, 0.94), rgba(18, 28, 39, 0.94));
+}
+
+.thermal-settings__qz-guide-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.thermal-settings__qz-guide-head p {
+  margin: 0.35rem 0 0;
+  color: var(--text-secondary, #9aa4b2);
+}
+
+.thermal-settings__qz-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #25d366, #14924a);
+  color: #f7fff9;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 10px 24px rgba(20, 146, 74, 0.22);
+}
+
+.thermal-settings__qz-download:hover {
+  filter: brightness(1.04);
+}
+
+.thermal-settings__qz-steps {
+  margin: 0.85rem 0 0;
+  padding-left: 1.15rem;
+  color: #dbe7de;
+  display: grid;
+  gap: 0.45rem;
+}
+
+@media (max-width: 720px) {
+  .thermal-settings__qz-guide-head {
+    flex-direction: column;
+  }
+
+  .thermal-settings__qz-download {
+    width: 100%;
+  }
+}
