@@ -7,9 +7,26 @@ import { isValidUUID, setStoreId } from '@/lib/store-id';
 
 const PAGE_STYLE_ID = 'smart-tech-thermal-page-style';
 
+async function waitForReceiptAssets(): Promise<void> {
+  const images = Array.from(document.querySelectorAll('.thermal-receipt img')) as HTMLImageElement[];
+  if (!images.length) return;
+
+  await Promise.all(images.map((img) => new Promise<void>((resolve) => {
+    if (img.complete) {
+      resolve();
+      return;
+    }
+
+    const done = () => resolve();
+    img.addEventListener('load', done, { once: true });
+    img.addEventListener('error', done, { once: true });
+    window.setTimeout(done, 1800);
+  })));
+}
+
 function updateThermalPageStyle(paperWidth: '58' | '80', paperHeightMm: number) {
   const widthMm = paperWidth === '80' ? 80 : 58;
-  const safeHeight = Math.max(28, Number.isFinite(paperHeightMm) ? paperHeightMm : 90);
+  const safeHeight = Math.max(22, Number.isFinite(paperHeightMm) ? paperHeightMm : 80);
   const css = `@page { size: ${widthMm}mm ${safeHeight.toFixed(2)}mm; margin: 0; }`;
 
   let styleEl = document.getElementById(PAGE_STYLE_ID) as HTMLStyleElement | null;
@@ -84,17 +101,6 @@ export default function PrintReceiptPage() {
   useEffect(() => {
     if (loading || error || !model) return;
 
-    const measureTimer = window.setTimeout(() => {
-      const receipt = document.querySelector('.thermal-receipt__inner') as HTMLElement | null;
-      if (!receipt) return;
-      const heightPx = receipt.scrollHeight;
-      const pxToMm = 25.4 / 96;
-      const extraTailMm = settings.showFooterCut ? 4 : 2.5;
-      const totalHeightMm = (heightPx * pxToMm) + extraTailMm;
-      updateThermalPageStyle(settings.paperWidth, totalHeightMm);
-      document.documentElement.style.setProperty('--thermal-paper-height-mm', `${totalHeightMm.toFixed(2)}mm`);
-    }, 40);
-
     const autoClose = settings.autoCloseAfterPrint;
     const returnTo = searchParams.get('returnTo')?.trim() || '';
     const onAfterPrint = () => {
@@ -117,14 +123,32 @@ export default function PrintReceiptPage() {
 
     window.addEventListener('afterprint', onAfterPrint, { once: true });
 
-    const timer = window.setTimeout(() => {
-      window.focus();
-      window.print();
-    }, 380);
+    let cancelled = false;
+    const runPrint = async () => {
+      await waitForReceiptAssets();
+      if (cancelled) return;
+
+      const receipt = document.querySelector('.thermal-receipt__inner') as HTMLElement | null;
+      if (receipt) {
+        const heightPx = receipt.scrollHeight;
+        const pxToMm = 25.4 / 96;
+        const extraTailMm = settings.showFooterCut ? 2.2 : 1.2;
+        const totalHeightMm = (heightPx * pxToMm) + extraTailMm;
+        updateThermalPageStyle(settings.paperWidth, totalHeightMm);
+        document.documentElement.style.setProperty('--thermal-paper-height-mm', `${totalHeightMm.toFixed(2)}mm`);
+      }
+
+      window.setTimeout(() => {
+        if (cancelled) return;
+        window.focus();
+        window.print();
+      }, 120);
+    };
+
+    void runPrint();
 
     return () => {
-      window.clearTimeout(measureTimer);
-      window.clearTimeout(timer);
+      cancelled = true;
       window.removeEventListener('afterprint', onAfterPrint);
     };
   }, [loading, error, model, searchParams, settings.autoCloseAfterPrint, settings.showFooterCut, settings.paperWidth]);

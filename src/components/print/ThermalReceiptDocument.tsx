@@ -33,7 +33,15 @@ export default function ThermalReceiptDocument({ model, settings }: ThermalRecei
       <div className="thermal-receipt__inner">
         <header className="thermal-receipt__header thermal-receipt__brand">
           {settings.showLogo && model.company.logo_url ? (
-            <img className="thermal-receipt__logo" src={model.company.logo_url} alt={model.company.nome} />
+            <img
+              className="thermal-receipt__logo"
+              src={model.company.logo_url}
+              alt={model.company.nome}
+              loading="eager"
+              decoding="sync"
+              crossOrigin="anonymous"
+              referrerPolicy="no-referrer"
+            />
           ) : null}
           <div className="thermal-receipt__store-name">{model.company.nome}</div>
           {model.company.cnpj ? <div className="thermal-receipt__company-line">CNPJ: {model.company.cnpj}</div> : null}
@@ -136,4 +144,3 @@ export default function ThermalReceiptDocument({ model, settings }: ThermalRecei
     </div>
   );
 }
-
