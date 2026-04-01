@@ -132,7 +132,11 @@ export default function PrintReceiptPage() {
       if (receipt) {
         const heightPx = receipt.scrollHeight;
         const pxToMm = 25.4 / 96;
-        const extraTailMm = settings.showFooterCut ? 2.2 : 1.2;
+        const extraTailMm = settings.printDensity === 'compact'
+          ? (settings.showFooterCut ? 1.4 : 0.8)
+          : settings.printDensity === 'dense'
+            ? (settings.showFooterCut ? 2.8 : 1.5)
+            : (settings.showFooterCut ? 2.2 : 1.2);
         const totalHeightMm = (heightPx * pxToMm) + extraTailMm;
         updateThermalPageStyle(settings.paperWidth, totalHeightMm);
         document.documentElement.style.setProperty('--thermal-paper-height-mm', `${totalHeightMm.toFixed(2)}mm`);
@@ -151,7 +155,7 @@ export default function PrintReceiptPage() {
       cancelled = true;
       window.removeEventListener('afterprint', onAfterPrint);
     };
-  }, [loading, error, model, searchParams, settings.autoCloseAfterPrint, settings.showFooterCut, settings.paperWidth]);
+  }, [loading, error, model, searchParams, settings.autoCloseAfterPrint, settings.showFooterCut, settings.paperWidth, settings.printDensity]);
 
   if (loading) {
     return <div className="thermal-print-page"><div className="thermal-print-page__status">Preparando cupom…</div></div>;

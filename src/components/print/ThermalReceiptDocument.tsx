@@ -18,6 +18,53 @@ export default function ThermalReceiptDocument({ model, settings }: ThermalRecei
   const paperWidthMm = settings.paperWidth === '80' ? '80mm' : '58mm';
   const usefulWidthMm = `${settings.usefulWidthMm}mm`;
   const marginMm = `${settings.innerMarginMm}mm`;
+  const densityVars = settings.printDensity === 'compact'
+    ? {
+        sectionGap: '0.8mm',
+        headerGap: '0.65mm',
+        itemsPad: '0.55mm',
+        itemGap: '0.55mm',
+        noteGap: '0.08mm',
+        totalPad: '0.6mm',
+        grandGap: '0.12mm',
+        cutGap: '0.45mm',
+        logoWidth: '14mm',
+        logoHeight: '7mm',
+        logoGap: '0.5mm',
+        titleGap: '0.16mm',
+        docGap: '0.2mm',
+      }
+    : settings.printDensity === 'dense'
+      ? {
+          sectionGap: '1.4mm',
+          headerGap: '1.05mm',
+          itemsPad: '1mm',
+          itemGap: '1mm',
+          noteGap: '0.18mm',
+          totalPad: '1mm',
+          grandGap: '0.3mm',
+          cutGap: '0.8mm',
+          logoWidth: '18mm',
+          logoHeight: '9mm',
+          logoGap: '0.9mm',
+          titleGap: '0.35mm',
+          docGap: '0.45mm',
+        }
+      : {
+          sectionGap: '1.1mm',
+          headerGap: '0.8mm',
+          itemsPad: '0.8mm',
+          itemGap: '0.8mm',
+          noteGap: '0.1mm',
+          totalPad: '0.8mm',
+          grandGap: '0.2mm',
+          cutGap: '0.6mm',
+          logoWidth: '16mm',
+          logoHeight: '8mm',
+          logoGap: '0.8mm',
+          titleGap: '0.25mm',
+          docGap: '0.35mm',
+        };
 
   return (
     <div
@@ -28,6 +75,19 @@ export default function ThermalReceiptDocument({ model, settings }: ThermalRecei
         ['--inner-margin-mm' as any]: marginMm,
         ['--font-size-px' as any]: `${settings.fontSizePx}px`,
         ['--line-height' as any]: String(settings.lineHeight),
+        ['--section-gap-mm' as any]: densityVars.sectionGap,
+        ['--header-gap-mm' as any]: densityVars.headerGap,
+        ['--items-pad-mm' as any]: densityVars.itemsPad,
+        ['--item-gap-mm' as any]: densityVars.itemGap,
+        ['--item-note-gap-mm' as any]: densityVars.noteGap,
+        ['--totals-pad-mm' as any]: densityVars.totalPad,
+        ['--grand-gap-mm' as any]: densityVars.grandGap,
+        ['--cut-gap-mm' as any]: densityVars.cutGap,
+        ['--logo-width-mm' as any]: densityVars.logoWidth,
+        ['--logo-height-mm' as any]: densityVars.logoHeight,
+        ['--logo-gap-mm' as any]: densityVars.logoGap,
+        ['--title-gap-mm' as any]: densityVars.titleGap,
+        ['--doc-gap-mm' as any]: densityVars.docGap,
       }}
     >
       <div className="thermal-receipt__inner">

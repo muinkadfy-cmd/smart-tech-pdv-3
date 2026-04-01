@@ -33,12 +33,22 @@ export function usePrintSettings() {
   async function applyProfile(profileId: ThermalPrinterProfileId) {
     const base = buildThermalSettingsFromProfile(profileId);
     await persist({
-      ...settings,
       ...base,
+      ...settings,
+      printerProfile: base.printerProfile,
+      usefulWidthMm: base.usefulWidthMm,
+      innerMarginMm: base.innerMarginMm,
+      fontSizePx: base.fontSizePx,
+      lineHeight: base.lineHeight,
       showLogo: settings.showLogo,
       showQrCode: settings.showQrCode,
       showFooterCut: settings.showFooterCut,
       autoCloseAfterPrint: settings.autoCloseAfterPrint,
+      paperWidth: settings.paperWidth,
+      backend: settings.backend,
+      qzPrinterName: settings.qzPrinterName,
+      qzScriptUrl: settings.qzScriptUrl,
+      printDensity: settings.printDensity,
     });
   }
 

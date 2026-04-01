@@ -19,6 +19,7 @@ import { isDesktopApp } from '@/lib/platform';
 import { getRuntimeStoreId } from '@/lib/runtime-context';
 import {
   canUseCompanyRemote,
+  fetchRemoteCompanyByStoreId,
   deleteRemoteCompanyByStoreId,
   upsertRemoteCompanyByStoreId,
 } from '@/lib/capabilities/company-remote-adapter';
@@ -156,6 +157,44 @@ export async function fetchCompany(): Promise<{ success: boolean; company?: Comp
     safeSet(COMPANY_CACHE_KEY, toCache(company));
 
     return { success: true, company };
+  }
+
+  if (await canUseCompanyRemote()) {
+    try {
+      const remote = await fetchRemoteCompanyByStoreId(scopeId);
+      if (remote.data) {
+        const remoteRow: CompanyRow = {
+          id: remote.data.id,
+          store_id: remote.data.store_id,
+          nome_fantasia: remote.data.nome_fantasia,
+          razao_social: remote.data.razao_social,
+          cnpj: remote.data.cnpj,
+          telefone: remote.data.telefone,
+          endereco: remote.data.endereco,
+          cidade: remote.data.cidade,
+          estado: remote.data.estado,
+          cep: remote.data.cep,
+          logo_url: remote.data.logo_url ?? undefined,
+          mensagem_rodape: remote.data.mensagem_rodape ?? undefined,
+          created_at: remote.data.created_at,
+          updated_at: remote.data.updated_at,
+        };
+
+        saveLocal(remoteRow);
+
+        if (isDesktopApp()) {
+          try {
+            await kvSet(companyKvKey(scopeId), JSON.stringify(remoteRow));
+          } catch {
+            // ignore desktop cache backfill failures here
+          }
+        }
+
+        return { success: true, company: remoteRow };
+      }
+    } catch {
+      // fallback below
+    }
   }
 
   safeRemove(COMPANY_CACHE_KEY);
