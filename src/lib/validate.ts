@@ -128,6 +128,7 @@ export function isValidOrdemServico(obj: any): obj is OrdemServico {
     (obj.dataConclusao === undefined || typeof obj.dataConclusao === 'string') &&
     (obj.dataPrevisao === undefined || typeof obj.dataPrevisao === 'string') &&
     (obj.senhaCliente === undefined || typeof obj.senhaCliente === 'string') &&
+    (obj.senhaPadrao === undefined || typeof obj.senhaPadrao === 'string') &&
     (obj.laudoTecnico === undefined || typeof obj.laudoTecnico === 'string')
   );
 }

@@ -216,6 +216,7 @@ export const SCHEMAS: Record<string, TableSchema> = {
       dataConclusao: { supabaseColumn: 'data_conclusao', type: 'date', nullable: true },
       dataPrevisao: { supabaseColumn: 'data_previsao', type: 'date', nullable: true },
       senhaCliente: { supabaseColumn: 'senha_cliente', type: 'string', nullable: true },
+      senhaPadrao: { supabaseColumn: 'senha_padrao', type: 'string', nullable: true },
       laudoTecnico: { supabaseColumn: 'laudo_tecnico', type: 'string', nullable: true },
       warranty_terms_snapshot: { supabaseColumn: 'warranty_terms_snapshot', type: 'string', nullable: true },
       warranty_terms_enabled: { supabaseColumn: 'warranty_terms_enabled', type: 'boolean', nullable: true },
