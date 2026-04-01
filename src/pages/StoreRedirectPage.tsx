@@ -15,7 +15,7 @@ export default function StoreRedirectPage() {
   useEffect(() => {
     if (!storeId || !isValidUUID(storeId)) {
       console.error('[StoreRedirect] ID inválido:', storeId);
-      navigate('/painel', { replace: true });
+      navigate('/login', { replace: true });
       return;
     }
 
@@ -23,9 +23,22 @@ export default function StoreRedirectPage() {
     setStoreId(storeId);
     console.log('[StoreRedirect] Store ID definido:', storeId);
 
-    // A sessão é criada automaticamente quando necessário.
+    // Se já existir sessão, segue para o painel da loja atual.
+    // Sem sessão, o link curto deve abrir o login da loja, não a área protegida.
     const session = getCurrentSession();
-    navigate(session ? '/' : '/painel', { replace: true });
+    if (session) {
+      navigate('/painel', { replace: true });
+      return;
+    }
+
+    navigate(`/login?store=${encodeURIComponent(storeId)}`, {
+      replace: true,
+      state: {
+        prefill: {
+          storeId,
+        },
+      },
+    });
   }, [storeId, navigate]);
 
   return (

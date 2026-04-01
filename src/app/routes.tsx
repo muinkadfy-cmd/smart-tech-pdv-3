@@ -117,6 +117,14 @@ export const router = createBrowserRouter([
     ),
   },
   {
+    path: '/s/:storeId',
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <StoreRedirectPage />
+      </Suspense>
+    ),
+  },
+  {
     path: '/comprar',
     element: (
       <Suspense fallback={<PageLoader />}>

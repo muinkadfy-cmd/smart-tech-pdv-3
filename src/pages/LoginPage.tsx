@@ -133,8 +133,11 @@ export default function LoginPage() {
 
 
   useEffect(() => {
-    // 🔐 Build de venda (Desktop/PROD): se licença for obrigatória/ativa e não estiver válida, mandar para ativação.
+    // Pré-login deve permanecer acessível para o cliente entrar na loja correta
+    // ou criar a conta da loja. A checagem comercial fica no guard das rotas privadas.
     const run = async () => {
+      const session = getCurrentSession();
+      if (!session) return;
       const required = isLicenseMandatory() || isLicenseEnabled();
       if (!required) return;
       const st = await getLicenseStatusAsync();
