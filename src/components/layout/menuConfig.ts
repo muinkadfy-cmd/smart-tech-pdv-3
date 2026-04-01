@@ -16,7 +16,8 @@ export const menuGroups: Array<{ label: string; items: MenuItem[] }> = [
   {
     label: 'Principal',
     items: [
-      { path: '/painel', label: 'Painel', icon: 'dashboard', color: 'blue' }
+      { path: '/painel', label: 'Painel', icon: 'dashboard', color: 'blue' },
+      { path: '/atualizacoes', label: 'Atualizações', icon: 'refresh', color: 'green' }
     ]
   },
   {
@@ -55,7 +56,6 @@ export const menuGroups: Array<{ label: string; items: MenuItem[] }> = [
   items: [
     { path: '/codigos', label: 'Códigos Secretos', icon: 'more', color: 'purple' },
     { path: '/imei', label: 'IMEI', icon: 'search', color: 'blue' },
-    { path: '/atualizacoes', label: 'Atualizações', icon: 'refresh', color: 'green' },
     { path: '/ajuda', label: 'Ajuda', icon: 'help', color: 'blue' },
     { path: '/backup', label: 'Backup', icon: 'backup', color: 'blue' },
     { path: '/configuracoes', label: 'Configurações', icon: 'settings', color: 'blue' }
