@@ -81,3 +81,36 @@
 [data-theme="dark"] .st-page-header__kicker{
   color: rgba(74, 222, 128, 0.92);
 }
+
+/* Micro acabamento global */
+.st-page-header{
+  position: relative;
+  padding-bottom: 2px;
+}
+
+.st-page-header__top{
+  padding: 0.15rem 0 0.1rem;
+}
+
+.st-page-header__title{
+  text-wrap: balance;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.st-page-header__subtitle{
+  max-width: 880px;
+}
+
+.st-page-header__actions > *{
+  box-shadow: 0 10px 22px -18px rgba(15, 23, 42, 0.42);
+}
+
+[data-theme="dark"] .st-page-header__actions > *{
+  box-shadow: 0 12px 26px -18px rgba(2, 6, 23, 0.56);
+}
+
+@media (max-width: 768px){
+  .st-page-header{
+    margin-bottom: 0.9rem;
+  }
+}

@@ -1150,3 +1150,32 @@ html[data-low-end="1"] .low-end-switch::after { transition: none !important; }
   border-radius: 8px; font-size: 0.82rem; line-height: 1.5; color: var(--text);
 }
 .low-end-suggestion-banner strong { color: #f59e0b; }
+
+/* ===== CABEÇALHOS DE PÁGINA MAIS CONSISTENTES ===== */
+.page-header,
+.page-head {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.page-header h1,
+.page-head h1 {
+  letter-spacing: -0.02em;
+  font-weight: 780;
+  text-wrap: balance;
+}
+
+.page-header p,
+.page-head .page-subtitle {
+  max-width: 860px;
+  line-height: 1.55;
+}
+
+/* ===== BLOCOS INFORMATIVOS MAIS LIMPOS ===== */
+.page-header-chip,
+.resumo-card,
+.recibo-stat-card,
+.metric-card,
+.kpi-card {
+  box-shadow: 0 14px 28px -24px rgba(15, 23, 42, 0.45);
+}

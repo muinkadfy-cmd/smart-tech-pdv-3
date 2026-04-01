@@ -331,3 +331,38 @@
     height: 100%;
   }
 }
+
+/* Micro acabamento refinado */
+.sidebar-group-label{
+  margin-top: 2px;
+}
+
+.sidebar-brand{
+  transition: transform 140ms ease, opacity 140ms ease;
+}
+
+.sidebar-brand:hover{
+  transform: translateX(1px);
+}
+
+.sidebar-brand-mark{
+  box-shadow:
+    0 10px 20px -16px rgba(2, 6, 23, 0.48),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.sidebar-icon{
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.sidebar-item:hover{
+  transform: translateX(1px);
+}
+
+.sidebar-item:hover .sidebar-icon{
+  transform: translateY(-1px);
+}
+
+.sidebar-item.active{
+  box-shadow: 0 14px 26px -22px rgba(var(--accent-rgb), 0.5);
+}

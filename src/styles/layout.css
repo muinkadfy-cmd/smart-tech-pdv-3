@@ -117,3 +117,7 @@
 @media print {
   .app { filter: none !important; }
 }
+
+.page-container{
+  position: relative;
+}

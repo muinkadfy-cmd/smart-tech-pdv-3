@@ -287,3 +287,17 @@
     font-size: 0.9rem;
   }
 }
+
+/* Micro acabamento refinado */
+.drawer-group-label {
+  letter-spacing: 0.1em;
+  opacity: 0.8;
+}
+
+.drawer-item:hover {
+  transform: translateX(1px);
+}
+
+.drawer-item.active {
+  box-shadow: 0 12px 22px -20px rgba(15, 23, 42, 0.4);
+}
