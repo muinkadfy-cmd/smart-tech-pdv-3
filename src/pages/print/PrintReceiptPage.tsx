@@ -5,6 +5,22 @@ import { resolveReceiptPrintData, type PrintableReceiptType } from '@/services/p
 import { loadThermalPrintSettings, type ThermalPrintSettings } from '@/services/print/settings';
 import { isValidUUID, setStoreId } from '@/lib/store-id';
 
+const PAGE_STYLE_ID = 'smart-tech-thermal-page-style';
+
+function updateThermalPageStyle(paperWidth: '58' | '80', paperHeightMm: number) {
+  const widthMm = paperWidth === '80' ? 80 : 58;
+  const safeHeight = Math.max(60, Number.isFinite(paperHeightMm) ? paperHeightMm : 120);
+  const css = `@page { size: ${widthMm}mm ${safeHeight.toFixed(2)}mm; margin: 0; }`;
+
+  let styleEl = document.getElementById(PAGE_STYLE_ID) as HTMLStyleElement | null;
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = PAGE_STYLE_ID;
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = css;
+}
+
 export default function PrintReceiptPage() {
   const { docType, id } = useParams<{ docType: PrintableReceiptType; id: string }>();
   const [searchParams] = useSearchParams();
@@ -68,6 +84,17 @@ export default function PrintReceiptPage() {
   useEffect(() => {
     if (loading || error || !model) return;
 
+    const measureTimer = window.setTimeout(() => {
+      const receipt = document.querySelector('.thermal-receipt__inner') as HTMLElement | null;
+      if (!receipt) return;
+      const heightPx = receipt.scrollHeight;
+      const pxToMm = 25.4 / 96;
+      const extraTailMm = settings.showFooterCut ? 10 : 6;
+      const totalHeightMm = (heightPx * pxToMm) + extraTailMm;
+      updateThermalPageStyle(settings.paperWidth, totalHeightMm);
+      document.documentElement.style.setProperty('--thermal-paper-height-mm', `${totalHeightMm.toFixed(2)}mm`);
+    }, 40);
+
     const autoClose = settings.autoCloseAfterPrint;
     const onAfterPrint = () => {
       if (autoClose) {
@@ -80,9 +107,10 @@ export default function PrintReceiptPage() {
     const timer = window.setTimeout(() => {
       window.focus();
       window.print();
-    }, 320);
+    }, 380);
 
     return () => {
+      window.clearTimeout(measureTimer);
       window.clearTimeout(timer);
       window.removeEventListener('afterprint', onAfterPrint);
     };
