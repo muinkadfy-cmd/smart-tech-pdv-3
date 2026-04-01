@@ -1421,6 +1421,7 @@ export function printDocument(
   options?: { empresa?: EmpresaInfo; paperSize?: TamanhoPapel; printMode?: PrintMode; copies?: number }
 ): void {
   let empresa = options?.empresa ?? DEFAULT_EMPRESA;
+  const profile = loadPrintProfile();
 
   // Em ESC/POS (desktop/térmica), também precisa carregar os dados salvos da empresa (cache),
   // senão o topo sai vazio mesmo com empresa cadastrada no sistema.
@@ -1429,10 +1430,14 @@ export function printDocument(
     empresa = { ...empresa, ...cachedCompany.data };
   }
 
-  const papel: TamanhoPapel = options?.paperSize ?? getPaperSize();
+  const defaultDesktopThermalPaper = (profile?.preset === '58mm' || profile?.preset === '80mm')
+    ? profile.preset
+    : '80mm';
+
+  const papel: TamanhoPapel = options?.paperSize
+    ?? (isDesktopApp() ? defaultDesktopThermalPaper : getPaperSize());
   const modo: PrintMode = options?.printMode ?? getPrintMode();
 
-  const profile = loadPrintProfile();
   const isThermal = papel === '58mm' || papel === '80mm';
   const preset = papel === '58mm' ? '58mm' : '80mm';
 
