@@ -9,6 +9,7 @@ export default function ThermalPrintSettings() {
   const { settings, saving, update, applyProfile } = usePrintSettings();
   const [qzStatus, setQzStatus] = useState<'idle' | 'checking' | 'ready' | 'missing'>('idle');
   const [qzPrinters, setQzPrinters] = useState<string[]>([]);
+  const [section, setSection] = useState<'geral' | 'qz' | 'visual'>('geral');
   const qzDownloadUrl = 'https://github.com/qzind/tray/releases/download/v2.2.5/qz-tray-2.2.5-x86_64.exe';
 
   const profileOptions = useMemo(() => Object.values(THERMAL_PRINTER_PROFILES), []);
@@ -44,133 +45,144 @@ export default function ThermalPrintSettings() {
         <span className="thermal-settings__badge">{saving ? 'Salvando...' : 'Persistente local'}</span>
       </div>
 
-      <div className="thermal-settings__grid">
-        <div className="form-group">
-          <label>Motor de impressão</label>
-          <select
-            value={settings.backend}
-            onChange={(e) => { void update({ backend: e.target.value as any }); }}
-          >
-            {!isDesktopApp() ? <option value="qz-tray">RAW/BT silencioso via QZ Tray</option> : null}
-            {isDesktopApp() ? <option value="native-escpos">RAW/BT silencioso nativo</option> : null}
-          </select>
-        </div>
+      <div className="thermal-settings__tabs" role="tablist" aria-label="Seções da impressão térmica">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={section === 'geral'}
+          className={`thermal-settings__tab ${section === 'geral' ? 'is-active' : ''}`}
+          onClick={() => setSection('geral')}
+        >
+          Geral
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={section === 'qz'}
+          className={`thermal-settings__tab ${section === 'qz' ? 'is-active' : ''}`}
+          onClick={() => setSection('qz')}
+        >
+          QZ Tray
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={section === 'visual'}
+          className={`thermal-settings__tab ${section === 'visual' ? 'is-active' : ''}`}
+          onClick={() => setSection('visual')}
+        >
+          Aparência
+        </button>
+      </div>
 
-        <div className="form-group">
-          <label>Perfil da impressora</label>
-          <select
-            value={settings.printerProfile}
-            onChange={(e) => { void applyProfile(e.target.value as any); }}
-          >
-            {profileOptions.map((profile) => (
-              <option key={profile.id} value={profile.id}>{profile.label}</option>
-            ))}
-          </select>
-        </div>
+      {section === 'geral' ? (
+        <div className="thermal-settings__panel" role="tabpanel">
+          <div className="thermal-settings__intro-card">
+            <strong>Base da impressora</strong>
+            <p>Escolha o motor, perfil e papel. Essa parte define como o sistema prepara o cupom para POS-58, POS-80 ou Epson.</p>
+          </div>
 
-        <div className="form-group">
-          <label>Papel térmico</label>
-          <select
-            value={settings.paperWidth}
-            onChange={(e) => { void update({ paperWidth: e.target.value === '80' ? '80' : '58' }); }}
-          >
-            <option value="58">58mm</option>
-            <option value="80">80mm</option>
-          </select>
-        </div>
-
-        <div className="form-group">
-          <label>Largura útil (mm)</label>
-          <input
-            type="number"
-            min="40"
-            max="72"
-            step="1"
-            value={settings.usefulWidthMm}
-            onChange={(e) => { void update({ usefulWidthMm: Number(e.target.value) || settings.usefulWidthMm }); }}
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Margem interna (mm)</label>
-          <input
-            type="number"
-            min="0"
-            max="6"
-            step="0.5"
-            value={settings.innerMarginMm}
-            onChange={(e) => { void update({ innerMarginMm: Number(e.target.value) || 0 }); }}
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Densidade / fonte</label>
-          <select
-            value={settings.printDensity}
-            onChange={(e) => { void update({ printDensity: e.target.value as any }); }}
-          >
-            <option value="compact">Compacta</option>
-            <option value="normal">Normal</option>
-            <option value="dense">Densa</option>
-          </select>
-        </div>
-
-        <div className="form-group">
-          <label>Tamanho da fonte (px)</label>
-          <input
-            type="number"
-            min="8"
-            max="16"
-            step="1"
-            value={settings.fontSizePx}
-            onChange={(e) => { void update({ fontSizePx: Number(e.target.value) || settings.fontSizePx }); }}
-          />
-        </div>
-
-        {settings.backend === 'qz-tray' ? (
-          <div className="form-group">
-            <div className="thermal-settings__qz-guide">
-              <div className="thermal-settings__qz-guide-head">
-                <div>
-                  <strong>QZ Tray para impressão RAW/BT</strong>
-                  <p>Instale o QZ Tray no Windows para imprimir em modo térmico profissional, sem depender do layout do navegador.</p>
-                </div>
-                <a
-                  className="thermal-settings__qz-download"
-                  href={qzDownloadUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Baixar QZ Tray 2.2.5
-                </a>
-              </div>
-
-              <ol className="thermal-settings__qz-steps">
-                <li>Baixe e instale o QZ Tray no computador da impressora.</li>
-                <li>Abra o QZ Tray e deixe o ícone ativo ao lado do relógio do Windows.</li>
-                <li>Clique em <strong>Testar QZ Tray</strong> para confirmar a conexão.</li>
-                <li>Clique em <strong>Carregar impressoras QZ</strong> e selecione a sua POS-58, POS-80 ou Epson.</li>
-                <li>Faça uma impressão de teste. Se abrir permissão do QZ, marque para confiar no sistema.</li>
-              </ol>
+          <div className="thermal-settings__grid">
+            <div className="form-group">
+              <label>Motor de impressão</label>
+              <select
+                value={settings.backend}
+                onChange={(e) => { void update({ backend: e.target.value as any }); }}
+              >
+                {!isDesktopApp() ? <option value="qz-tray">RAW/BT silencioso via QZ Tray</option> : null}
+                {isDesktopApp() ? <option value="native-escpos">RAW/BT silencioso nativo</option> : null}
+              </select>
             </div>
 
-            <label>Script do QZ Tray</label>
-            <input
-              type="url"
-              value={settings.qzScriptUrl}
-              onChange={(e) => { void update({ qzScriptUrl: e.target.value }); }}
-            />
-            <div className="thermal-settings__actions">
-              <button type="button" className="btn-secondary btn-sm" onClick={() => { void handleCheckQz(); }}>
-                {qzStatus === 'checking' ? 'Verificando...' : 'Testar QZ Tray'}
-              </button>
-              <button type="button" className="btn-secondary btn-sm" onClick={() => { void handleLoadQzPrinters(); }}>
-                Carregar impressoras QZ
-              </button>
+            <div className="form-group">
+              <label>Perfil da impressora</label>
+              <select
+                value={settings.printerProfile}
+                onChange={(e) => { void applyProfile(e.target.value as any); }}
+              >
+                {profileOptions.map((profile) => (
+                  <option key={profile.id} value={profile.id}>{profile.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Papel térmico</label>
+              <select
+                value={settings.paperWidth}
+                onChange={(e) => { void update({ paperWidth: e.target.value === '80' ? '80' : '58' }); }}
+              >
+                <option value="58">58mm</option>
+                <option value="80">80mm</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Largura útil (mm)</label>
+              <input
+                type="number"
+                min="40"
+                max="72"
+                step="1"
+                value={settings.usefulWidthMm}
+                onChange={(e) => { void update({ usefulWidthMm: Number(e.target.value) || settings.usefulWidthMm }); }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {section === 'qz' ? (
+        <div className="thermal-settings__panel" role="tabpanel">
+          <div className="thermal-settings__qz-guide">
+            <div className="thermal-settings__qz-guide-head">
+              <div>
+                <strong>QZ Tray para impressão RAW/BT</strong>
+                <p>Instale o QZ Tray no Windows para imprimir em modo térmico profissional, sem depender do layout do navegador.</p>
+              </div>
+              <a
+                className="thermal-settings__qz-download"
+                href={qzDownloadUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Baixar QZ Tray 2.2.5
+              </a>
+            </div>
+
+            <ol className="thermal-settings__qz-steps">
+              <li>Baixe e instale o QZ Tray no computador da impressora.</li>
+              <li>Abra o QZ Tray e deixe o ícone ativo ao lado do relógio do Windows.</li>
+              <li>Clique em <strong>Testar QZ Tray</strong> para confirmar a conexão.</li>
+              <li>Clique em <strong>Carregar impressoras QZ</strong> e selecione a sua POS-58, POS-80 ou Epson.</li>
+              <li>Faça uma impressão de teste. Se abrir permissão do QZ, marque para confiar no sistema.</li>
+            </ol>
+          </div>
+
+          <div className="thermal-settings__qz-layout">
+            <div className="form-group">
+              <label>Script do QZ Tray</label>
+              <input
+                type="url"
+                value={settings.qzScriptUrl}
+                onChange={(e) => { void update({ qzScriptUrl: e.target.value }); }}
+              />
+            </div>
+
+            <div className="thermal-settings__qz-actions-card">
+              <div className="thermal-settings__actions">
+                <button type="button" className="btn-secondary btn-sm" onClick={() => { void handleCheckQz(); }}>
+                  {qzStatus === 'checking' ? 'Verificando...' : 'Testar QZ Tray'}
+                </button>
+                <button type="button" className="btn-secondary btn-sm" onClick={() => { void handleLoadQzPrinters(); }}>
+                  Carregar impressoras QZ
+                </button>
+              </div>
               <span className={`thermal-settings__status thermal-settings__status--${qzStatus}`}>
-                {qzStatus === 'ready' ? 'QZ Tray detectado' : qzStatus === 'missing' ? 'QZ Tray não encontrado' : 'Ainda não verificado'}
+                {qzStatus === 'ready' ? 'QZ Tray detectado e pronto para uso' : qzStatus === 'missing' ? 'QZ Tray não encontrado neste computador' : 'Ainda não verificado'}
               </span>
             </div>
+
             <div className="thermal-settings__qz-printer">
               <label>Impressora do QZ Tray</label>
               <select
@@ -187,43 +199,90 @@ export default function ThermalPrintSettings() {
               </span>
             </div>
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
-      <div className="thermal-settings__toggles">
-        <label className="thermal-settings__toggle">
-          <input
-            type="checkbox"
-            checked={settings.showLogo}
-            onChange={(e) => { void update({ showLogo: e.target.checked }); }}
-          />
-          <span>Exibir logo</span>
-        </label>
-        <label className="thermal-settings__toggle">
-          <input
-            type="checkbox"
-            checked={settings.showQrCode}
-            onChange={(e) => { void update({ showQrCode: e.target.checked }); }}
-          />
-          <span>Exibir QR Code</span>
-        </label>
-        <label className="thermal-settings__toggle">
-          <input
-            type="checkbox"
-            checked={settings.showFooterCut}
-            onChange={(e) => { void update({ showFooterCut: e.target.checked }); }}
-          />
-          <span>Mostrar linha de corte</span>
-        </label>
-        <label className="thermal-settings__toggle">
-          <input
-            type="checkbox"
-            checked={settings.autoCloseAfterPrint}
-            onChange={(e) => { void update({ autoCloseAfterPrint: e.target.checked }); }}
-          />
-          <span>Fechar após imprimir</span>
-        </label>
-      </div>
+      {section === 'visual' ? (
+        <div className="thermal-settings__panel" role="tabpanel">
+          <div className="thermal-settings__intro-card">
+            <strong>Visual e acabamento</strong>
+            <p>Ajuste o espaço interno, a densidade do texto e os elementos visuais do cupom para ficar limpo e econômico.</p>
+          </div>
+
+          <div className="thermal-settings__grid">
+            <div className="form-group">
+              <label>Margem interna (mm)</label>
+              <input
+                type="number"
+                min="0"
+                max="6"
+                step="0.5"
+                value={settings.innerMarginMm}
+                onChange={(e) => { void update({ innerMarginMm: Number(e.target.value) || 0 }); }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Densidade / fonte</label>
+              <select
+                value={settings.printDensity}
+                onChange={(e) => { void update({ printDensity: e.target.value as any }); }}
+              >
+                <option value="compact">Compacta</option>
+                <option value="normal">Normal</option>
+                <option value="dense">Densa</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Tamanho da fonte (px)</label>
+              <input
+                type="number"
+                min="8"
+                max="16"
+                step="1"
+                value={settings.fontSizePx}
+                onChange={(e) => { void update({ fontSizePx: Number(e.target.value) || settings.fontSizePx }); }}
+              />
+            </div>
+          </div>
+
+          <div className="thermal-settings__toggles">
+            <label className="thermal-settings__toggle">
+              <input
+                type="checkbox"
+                checked={settings.showLogo}
+                onChange={(e) => { void update({ showLogo: e.target.checked }); }}
+              />
+              <span>Exibir logo</span>
+            </label>
+            <label className="thermal-settings__toggle">
+              <input
+                type="checkbox"
+                checked={settings.showQrCode}
+                onChange={(e) => { void update({ showQrCode: e.target.checked }); }}
+              />
+              <span>Exibir QR Code</span>
+            </label>
+            <label className="thermal-settings__toggle">
+              <input
+                type="checkbox"
+                checked={settings.showFooterCut}
+                onChange={(e) => { void update({ showFooterCut: e.target.checked }); }}
+              />
+              <span>Mostrar linha de corte</span>
+            </label>
+            <label className="thermal-settings__toggle">
+              <input
+                type="checkbox"
+                checked={settings.autoCloseAfterPrint}
+                onChange={(e) => { void update({ autoCloseAfterPrint: e.target.checked }); }}
+              />
+              <span>Fechar após imprimir</span>
+            </label>
+          </div>
+        </div>
+      ) : null}
 
       <div className="thermal-settings__footnote">
         Base útil recomendada: 48mm para POS-58 e 72mm para 80mm/Epson TM-T20. O modo compatível com diálogo foi removido da térmica.
