@@ -61,7 +61,9 @@ export default function UpdateBanner() {
           {pwaNeedRefresh ? ' • pronta para aplicar' : ''}
           {' • Faça backup antes de atualizar'}
         </span>
-        <small className="update-banner__warning">Risco preventivo: se a atualização for interrompida, pode haver inconsistência temporária no financeiro e fluxo de caixa.</small>
+        <small className="update-banner__warning">
+          Alerta crítico: faça backup antes de atualizar. Depois da atualização, confira financeiro, fluxo de caixa e movimentações. Se notar qualquer falta de dados, restaure o backup mais recente.
+        </small>
       </div>
 
       <div className="update-banner__actions">

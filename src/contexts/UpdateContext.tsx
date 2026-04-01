@@ -7,6 +7,7 @@ import { isBrowserOnline, isUpdateEnabled } from '@/lib/mode';
 import { BUILD_COMMIT, BUILD_DATE, BUILD_ID, BUILD_VERSION } from '@/config/buildInfo';
 import { appendUpdateLog, getUpdateLogs, type UpdateLogEntry } from '@/lib/updateLog';
 import { isBrowserOnlineSafe } from '@/lib/capabilities/runtime-remote-adapter';
+import { isDesktopApp } from '@/lib/platform';
 
 type UpdateState = {
   manifest: UpdateManifest | null;
@@ -252,6 +253,22 @@ export function UpdateProvider({ children }: { children: React.ReactNode }) {
     if (!isBrowserOnline()) {
       showToast('⚠️ Você está sem internet. Conecte-se para atualizar o app.', 'warning', 6500);
       return;
+    }
+
+    if (!isDesktopApp()) {
+      const confirmed = window.confirm(
+        'ALERTA CRÍTICO DE ATUALIZAÇÃO\n\n' +
+        'Antes de atualizar, faça um BACKUP completo.\n\n' +
+        'Depois clique em "Atualizar agora" e aguarde o app recarregar.\n\n' +
+        'Após a atualização, confira o financeiro, fluxo de caixa e movimentações recentes.\n' +
+        'Se notar falta de dados ou qualquer inconsistência, restaure imediatamente o backup mais recente.\n\n' +
+        'Deseja continuar a atualização agora?'
+      );
+
+      if (!confirmed) {
+        log('dismiss', 'Atualização cancelada no alerta crítico de backup.');
+        return;
+      }
     }
 
     log('apply', 'Usuário solicitou "Atualizar agora".');

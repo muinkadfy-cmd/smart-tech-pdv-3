@@ -260,11 +260,15 @@ function AtualizacoesPage() {
             <div className="updates-callout danger">
               <span className="updates-callout-icon">⚠️</span>
               <div>
-                <div className="updates-callout-title">Alerta importante antes de atualizar</div>
+                <div className="updates-callout-title">Alerta crítico antes de atualizar</div>
                 <div className="updates-callout-sub">
-                  Recomendamos fazer backup antes da atualização. Se o processo for interrompido ou o app fechar no meio,
-                  pode haver risco de inconsistência temporária em movimentações do <strong>fluxo de caixa</strong>,
-                  <strong> financeiro</strong> e outros dados recentes.
+                  <strong>Faça backup antes de atualizar.</strong> Depois clique em <strong>Atualizar agora</strong> e aguarde o app recarregar.
+                  Assim que a atualização terminar, confira <strong>financeiro</strong>, <strong>fluxo de caixa</strong> e
+                  <strong> movimentações recentes</strong>. Se perceber falta de dados ou qualquer inconsistência,
+                  <strong> restaure imediatamente o backup mais recente</strong>.
+                </div>
+                <div className="updates-callout-critical">
+                  Recomendação alta: nunca atualize no modo web sem ter um backup pronto para restauração.
                 </div>
                 <div className="updates-inline-actions">
                   <button className="updates-btn secondary" onClick={() => navigate('/backup')}>
