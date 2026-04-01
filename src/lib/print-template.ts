@@ -362,12 +362,10 @@ export function generatePrintTemplate(
       return `size: A4; margin: ${margin};`;
     }
     if (papel === '80mm') {
-      const margin = isEconomy50 ? '1mm' : '2mm';
-      return `size: 80mm 297mm; margin: ${margin};`;
+      return 'size: auto; margin: 0;';
     }
     // 58mm
-    const margin = isEconomy50 ? '0.5mm' : '1mm';
-    return `size: 58mm 297mm; margin: ${margin};`;
+    return 'size: auto; margin: 0;';
   })();
 
   const { data: dataFormatada, hora: horaFormatada } = data.data
@@ -1188,6 +1186,11 @@ export function generatePrintTemplate(
             max-width: 80mm;
             padding: ${modo === 'compact' ? '4px' : '6px'};
             margin: 0;
+            min-height: auto;
+            height: auto;
+            overflow: visible;
+            background: #fff;
+            color: #000;
           }
           body.paper-58mm {
             width: 58mm;
@@ -1195,6 +1198,11 @@ export function generatePrintTemplate(
             padding: ${modo === 'compact' ? '3px' : '4px'};
             margin: 0;
             font-size: ${modo === 'compact' ? '9px' : '10px'};
+            min-height: auto;
+            height: auto;
+            overflow: visible;
+            background: #fff;
+            color: #000;
           }
           /* Em papel tÃ©rmico, permitir quebra de linha (evita cortar texto) */
           body.paper-80mm .check-item,
