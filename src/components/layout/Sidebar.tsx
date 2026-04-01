@@ -5,6 +5,7 @@ import Tooltip from '@/components/ui/Tooltip';
 import { getCurrentSession } from '@/lib/auth-supabase';
 import { getLicenseStatus, getLicenseStatusAsync } from '@/lib/license';
 import { canAccessRoute } from '@/lib/permissions';
+import { onStoreAccessChange } from '@/lib/store-access';
 import { ALWAYS_VISIBLE_PATHS, PATHS_VENDAS_USADOS, menuGroups, type MenuItem } from './menuConfig';
 import { getBackupAlertState, onBackupAlertChange } from '@/lib/auto-backup';
 import './Sidebar.css';
@@ -70,7 +71,9 @@ function Sidebar() {
   const session = getCurrentSession();
   const [license, setLicense] = useState(() => getLicenseStatus());
   const [backupAlert, setBackupAlert] = useState(() => getBackupAlertState());
+  const [accessVersion, setAccessVersion] = useState(0);
   useEffect(() => onBackupAlertChange(setBackupAlert), []);
+  useEffect(() => onStoreAccessChange(() => setAccessVersion((current) => current + 1)), []);
 
   useEffect(() => {
     // Atualiza status de licença (para esconder itens no DEMO)
@@ -104,7 +107,7 @@ function Sidebar() {
         items: group.items.filter((item) => isVisible(item.path)),
       }))
       .filter((group) => group.items.length > 0);
-  }, [session?.userId, session?.role, license.status]);
+  }, [session?.userId, session?.role, license.status, accessVersion]);
 
   const visibleItems: MenuItem[] = useMemo(() => {
     if (!session) return [];
@@ -119,7 +122,7 @@ function Sidebar() {
     };
 
     return menuItems.filter((item) => isVisible(item.path));
-  }, [session?.userId, session?.role, license.status]);
+  }, [session?.userId, session?.role, license.status, accessVersion]);
 
   // No desktop, sempre mostrar expandido
   const isExpanded = !collapsed || isDesktop;

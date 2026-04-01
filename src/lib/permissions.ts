@@ -1,6 +1,7 @@
 import { getCurrentSession } from '@/lib/auth-supabase';
 import type { UserRole } from '@/types';
 import { isAdminOrSuperAdmin } from '@/lib/access-control';
+import { getCachedAllowedRoutes } from '@/lib/store-access';
 
 /**
  * Retorna a role atual ou null
@@ -47,6 +48,7 @@ export function canAccessRoute(route: string): boolean {
   const session = getCurrentSession();
   const role = session?.role as UserRole | undefined;
   if (!role) return false;
+  if (isAdminOrSuperAdmin(session)) return true;
 
   const r = (route || '').toLowerCase();
 
@@ -59,7 +61,8 @@ export function canAccessRoute(route: string): boolean {
   // Admin da loja OU SuperAdmin do sistema
   if (adminOnly) return isAdminOrSuperAdmin(session);
 
-  return true;
+  const allowedRoutes = getCachedAllowedRoutes(role, session?.storeId);
+  return allowedRoutes.some((allowed) => r.startsWith(String(allowed).toLowerCase()));
 }
 
 /**

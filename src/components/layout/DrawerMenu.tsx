@@ -1,7 +1,9 @@
 import { NavLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import Icon3D from '@/components/ui/Icon3D';
 import { getCurrentSession } from '@/lib/auth-supabase';
 import { canAccessRoute } from '@/lib/permissions';
+import { onStoreAccessChange } from '@/lib/store-access';
 import { ALWAYS_VISIBLE_PATHS, PATHS_VENDAS_USADOS, menuGroups } from './menuConfig';
 import { useUpdates } from '@/contexts/UpdateContext';
 import './DrawerMenu.css';
@@ -13,6 +15,9 @@ interface DrawerMenuProps {
 function DrawerMenu({ onClose }: DrawerMenuProps) {
   const session = getCurrentSession();
   const { hasUpdate } = useUpdates();
+  const [, setAccessVersion] = useState(0);
+
+  useEffect(() => onStoreAccessChange(() => setAccessVersion((current) => current + 1)), []);
 
   const isItemVisible = (path: string) =>
     ALWAYS_VISIBLE_PATHS.has(path) ||

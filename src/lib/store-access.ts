@@ -25,6 +25,7 @@ export interface StoreAccessRow {
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1h
 const cacheKey = (storeId: string) => `smart-tech:store-access-cache:${storeId}`;
+const STORE_ACCESS_CHANGED_EVENT = 'smart-tech:store-access-changed';
 
 function readCache(storeId: string): StoreAccessRow | null {
   try {
@@ -44,12 +45,33 @@ function writeCache(storeId: string, row: StoreAccessRow | null) {
   try {
     if (!row) {
       localStorage.removeItem(cacheKey(storeId));
+      window.dispatchEvent(new CustomEvent(STORE_ACCESS_CHANGED_EVENT, { detail: { storeId, routes: null } }));
       return;
     }
     localStorage.setItem(cacheKey(storeId), JSON.stringify({ ...row, __cachedAt: Date.now() }));
+    window.dispatchEvent(new CustomEvent(STORE_ACCESS_CHANGED_EVENT, { detail: { storeId, routes: row.routes } }));
   } catch {
     // ignore
   }
+}
+
+export function onStoreAccessChange(fn: () => void): () => void {
+  const handler = () => fn();
+  window.addEventListener(STORE_ACCESS_CHANGED_EVENT, handler);
+  return () => window.removeEventListener(STORE_ACCESS_CHANGED_EVENT, handler);
+}
+
+export function getCachedAllowedRoutes(role: UserRole, storeId?: string | null): string[] {
+  const base = ROLE_ROUTES[role] || [];
+  if (!storeId || isLocalOnly() || role === 'admin') return base;
+
+  const row = readCache(storeId);
+  const custom = row?.routes?.[role];
+  if (!Array.isArray(custom)) return base;
+
+  const baseSet = new Set(base);
+  const filtered = custom.filter((r) => typeof r === 'string' && baseSet.has(r));
+  return filtered;
 }
 
 export async function fetchStoreAccess(storeId: string): Promise<StoreAccessRow | null> {
@@ -82,18 +104,18 @@ export async function fetchStoreAccess(storeId: string): Promise<StoreAccessRow 
  */
 export async function getEffectiveAllowedRoutes(role: UserRole, storeId: string): Promise<string[]> {
   const base = ROLE_ROUTES[role] || [];
-  if (isLocalOnly()) return base;
+  if (isLocalOnly() || role === 'admin') return base;
 
 
   const row = await fetchStoreAccess(storeId);
   const custom = row?.routes?.[role];
 
-  if (!Array.isArray(custom) || custom.length === 0) return base;
+  if (!Array.isArray(custom)) return base;
 
   // Interseção: só permite o que existe no base
   const baseSet = new Set(base);
   const filtered = custom.filter((r) => typeof r === 'string' && baseSet.has(r));
-  return filtered.length > 0 ? filtered : base;
+  return filtered;
 }
 
 /**

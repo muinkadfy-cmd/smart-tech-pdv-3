@@ -11,12 +11,16 @@ import {
   updateUserRole,
   type AppUser,
 } from '@/lib/auth-supabase';
+import { fetchStoreAccess, upsertStoreAccess, type StoreAccessRoutes } from '@/lib/store-access';
 import type { UserRole } from '@/types';
+import { ROLE_ROUTES } from '@/types';
+import { menuGroups } from '@/components/layout/menuConfig';
 
 import './UsuariosPage.css';
 
 type ResetDraftMap = Record<string, string>;
 type InviteResult = { email: string; token: string } | null;
+type ManagedRole = 'atendente' | 'tecnico';
 
 const ROLE_OPTIONS: Array<{ value: UserRole; label: string }> = [
   { value: 'admin', label: 'Admin' },
@@ -35,6 +39,23 @@ function scopeText(user: AppUser): string {
   return 'Escopo local';
 }
 
+const MANAGED_ROLES: Array<{ value: ManagedRole; label: string; description: string }> = [
+  { value: 'atendente', label: 'Atendente', description: 'Atendimento, vendas e operação de balcão.' },
+  { value: 'tecnico', label: 'Técnico', description: 'Assistência técnica e rotinas operacionais da bancada.' },
+];
+
+const ROUTE_LABELS = new Map(
+  menuGroups.flatMap((group) => group.items.map((item) => [item.path, { label: item.label, group: group.label }]))
+);
+
+function getRoleRoutes(role: ManagedRole, draft: StoreAccessRoutes): string[] {
+  const base = ROLE_ROUTES[role] || [];
+  const selected = draft[role];
+  if (!Array.isArray(selected)) return base;
+  const baseSet = new Set(base);
+  return selected.filter((route) => baseSet.has(route));
+}
+
 export default function UsuariosPage() {
   const session = getCurrentSession();
   const superAdmin = session?.isSuperAdmin === true;
@@ -48,6 +69,10 @@ export default function UsuariosPage() {
   const [formRole, setFormRole] = useState<UserRole>('atendente');
   const [resetDrafts, setResetDrafts] = useState<ResetDraftMap>({});
   const [inviteResult, setInviteResult] = useState<InviteResult>(null);
+  const [accessDraft, setAccessDraft] = useState<StoreAccessRoutes>({});
+  const [accessLoading, setAccessLoading] = useState(false);
+  const [accessSaving, setAccessSaving] = useState(false);
+  const [accessRole, setAccessRole] = useState<ManagedRole>('atendente');
 
   const pageTitle = superAdmin ? 'Contas do sistema' : 'Usuarios da loja';
   const pageSubtitle = superAdmin
@@ -68,8 +93,25 @@ export default function UsuariosPage() {
     }
   }
 
+  async function loadAccess() {
+    const storeId = session?.storeId;
+    if (!storeId) return;
+    setAccessLoading(true);
+    try {
+      const row = await fetchStoreAccess(storeId);
+      setAccessDraft({
+        admin: ROLE_ROUTES.admin,
+        atendente: row?.routes?.atendente || ROLE_ROUTES.atendente,
+        tecnico: row?.routes?.tecnico || ROLE_ROUTES.tecnico,
+      });
+    } finally {
+      setAccessLoading(false);
+    }
+  }
+
   useEffect(() => {
     void loadData();
+    void loadAccess();
   }, []);
 
   const currentSummary = useMemo(() => {
@@ -165,6 +207,67 @@ export default function UsuariosPage() {
     );
   }
 
+  function toggleRoleRoute(role: ManagedRole, route: string) {
+    setAccessDraft((current) => {
+      const base = new Set(ROLE_ROUTES[role] || []);
+      if (!base.has(route)) return current;
+
+      const next = new Set(getRoleRoutes(role, current));
+      if (next.has(route)) next.delete(route);
+      else next.add(route);
+
+      return { ...current, admin: ROLE_ROUTES.admin, [role]: Array.from(next) };
+    });
+  }
+
+  function setAllRoleRoutes(role: ManagedRole, enabled: boolean) {
+    setAccessDraft((current) => ({
+      ...current,
+      admin: ROLE_ROUTES.admin,
+      [role]: enabled ? [...ROLE_ROUTES[role]] : [],
+    }));
+  }
+
+  async function handleSaveAccess() {
+    const storeId = session?.storeId;
+    if (!storeId) {
+      showToast('Nao foi possivel identificar a loja atual.', 'error');
+      return;
+    }
+
+    setAccessSaving(true);
+    try {
+      const payload: StoreAccessRoutes = {
+        atendente: getRoleRoutes('atendente', accessDraft),
+        tecnico: getRoleRoutes('tecnico', accessDraft),
+      };
+      const response = await upsertStoreAccess(storeId, payload);
+      if (!response.ok) {
+        showToast(response.error || 'Nao foi possivel salvar as permissoes.', 'error');
+        return;
+      }
+      showToast('Permissoes da loja atualizadas com sucesso.', 'success');
+      await loadAccess();
+    } finally {
+      setAccessSaving(false);
+    }
+  }
+
+  const currentManagedRoutes = useMemo(
+    () => getRoleRoutes(accessRole, accessDraft),
+    [accessRole, accessDraft]
+  );
+
+  const routeGroups = useMemo(() => {
+    const allowedSet = new Set(ROLE_ROUTES[accessRole] || []);
+    return menuGroups
+      .map((group) => ({
+        label: group.label,
+        items: group.items.filter((item) => allowedSet.has(item.path)),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [accessRole]);
+
   return (
     <AuthGuard requireRole="admin">
       <div className="usuarios-page page-container">
@@ -221,6 +324,100 @@ export default function UsuariosPage() {
             </div>
           </section>
         ) : null}
+
+        <section className="config-card usuarios-section">
+          <div className="usuarios-section-header">
+            <div>
+              <h2>Permissões por função</h2>
+              <p>Admin tem acesso total. Aqui voce escolhe o que atendente e tecnico podem visualizar no sistema.</p>
+            </div>
+            <div className="usuarios-access-status">
+              <span className="usuarios-pill is-info">Admin sem restricao</span>
+              <span className="usuarios-pill">{session?.storeName || 'Loja atual'}</span>
+            </div>
+          </div>
+
+          <div className="usuarios-access-hero">
+            <div className="usuarios-access-hero-card">
+              <span className="usuarios-summary-label">Admin</span>
+              <strong>Acesso total da loja</strong>
+              <p>Gerencia usuarios, configuracoes, licenca e toda a operacao sem bloqueios por funcao.</p>
+            </div>
+            <div className="usuarios-access-hero-card">
+              <span className="usuarios-summary-label">Controle visual</span>
+              <strong>Marque o que cada perfil pode ver</strong>
+              <p>As opcoes abaixo afetam menu e navegacao da loja atual, com comportamento padrao tipo SaaS.</p>
+            </div>
+          </div>
+
+          <div className="usuarios-access-toolbar">
+            <div className="usuarios-role-switch">
+              {MANAGED_ROLES.map((role) => {
+                const active = accessRole === role.value;
+                const count = getRoleRoutes(role.value, accessDraft).length;
+                return (
+                  <button
+                    key={role.value}
+                    type="button"
+                    className={`usuarios-role-chip ${active ? 'is-active' : ''}`}
+                    onClick={() => setAccessRole(role.value)}
+                  >
+                    <strong>{role.label}</strong>
+                    <span>{role.description}</span>
+                    <em>{count} area(s) liberada(s)</em>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="usuarios-access-actions">
+              <button type="button" className="btn-secondary" onClick={() => setAllRoleRoutes(accessRole, true)}>
+                Marcar tudo
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => setAllRoleRoutes(accessRole, false)}>
+                Limpar tudo
+              </button>
+              <button type="button" className="btn-primary" onClick={() => void handleSaveAccess()} disabled={accessSaving || accessLoading}>
+                {accessSaving ? 'Salvando...' : 'Salvar permissões'}
+              </button>
+            </div>
+          </div>
+
+          {accessLoading ? (
+            <div className="empty-state">Carregando permissoes da loja...</div>
+          ) : (
+            <div className="usuarios-access-grid">
+              {routeGroups.map((group) => (
+                <section key={group.label} className="usuarios-access-card">
+                  <div className="usuarios-access-card-head">
+                    <h3>{group.label}</h3>
+                    <span>{group.items.filter((item) => currentManagedRoutes.includes(item.path)).length}/{group.items.length}</span>
+                  </div>
+
+                  <div className="usuarios-access-list">
+                    {group.items.map((item) => {
+                      const meta = ROUTE_LABELS.get(item.path);
+                      const checked = currentManagedRoutes.includes(item.path);
+                      return (
+                        <label key={`${accessRole}-${item.path}`} className={`usuarios-access-item ${checked ? 'is-checked' : ''}`}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleRoleRoute(accessRole, item.path)}
+                          />
+                          <div>
+                            <strong>{meta?.label || item.path}</strong>
+                            <span>{item.path}</span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+        </section>
 
         <section className="config-card usuarios-section">
           <div className="usuarios-section-header">
