@@ -1,12 +1,21 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { usePrintSettings } from '@/hooks/usePrintSettings';
+import { isDesktopApp } from '@/lib/platform';
+import { isQzTrayAvailable } from '@/services/print/qzTrayService';
 import { THERMAL_PRINTER_PROFILES } from '@/services/print/thermalProfiles';
 import './ThermalPrintSettings.css';
 
 export default function ThermalPrintSettings() {
   const { settings, saving, update, applyProfile } = usePrintSettings();
+  const [qzStatus, setQzStatus] = useState<'idle' | 'checking' | 'ready' | 'missing'>('idle');
 
   const profileOptions = useMemo(() => Object.values(THERMAL_PRINTER_PROFILES), []);
+
+  async function handleCheckQz() {
+    setQzStatus('checking');
+    const ok = await isQzTrayAvailable(settings.qzScriptUrl);
+    setQzStatus(ok ? 'ready' : 'missing');
+  }
 
   return (
     <section className="thermal-settings">
@@ -19,6 +28,18 @@ export default function ThermalPrintSettings() {
       </div>
 
       <div className="thermal-settings__grid">
+        <div className="form-group">
+          <label>Modo de impressão</label>
+          <select
+            value={settings.backend}
+            onChange={(e) => { void update({ backend: e.target.value as any }); }}
+          >
+            {!isDesktopApp() ? <option value="browser-route">Pré-visualização web</option> : null}
+            {!isDesktopApp() ? <option value="qz-tray">QZ Tray (web profissional)</option> : null}
+            {isDesktopApp() ? <option value="native-escpos">ESC/POS nativo</option> : null}
+          </select>
+        </div>
+
         <div className="form-group">
           <label>Perfil da impressora</label>
           <select
@@ -89,6 +110,25 @@ export default function ThermalPrintSettings() {
             onChange={(e) => { void update({ fontSizePx: Number(e.target.value) || settings.fontSizePx }); }}
           />
         </div>
+
+        {settings.backend === 'qz-tray' ? (
+          <div className="form-group">
+            <label>Script do QZ Tray</label>
+            <input
+              type="url"
+              value={settings.qzScriptUrl}
+              onChange={(e) => { void update({ qzScriptUrl: e.target.value }); }}
+            />
+            <div className="thermal-settings__actions">
+              <button type="button" className="btn-secondary btn-sm" onClick={() => { void handleCheckQz(); }}>
+                {qzStatus === 'checking' ? 'Verificando...' : 'Testar QZ Tray'}
+              </button>
+              <span className={`thermal-settings__status thermal-settings__status--${qzStatus}`}>
+                {qzStatus === 'ready' ? 'QZ Tray detectado' : qzStatus === 'missing' ? 'QZ Tray não encontrado' : 'Ainda não verificado'}
+              </span>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="thermal-settings__toggles">
@@ -132,4 +172,3 @@ export default function ThermalPrintSettings() {
     </section>
   );
 }
-

@@ -1,6 +1,8 @@
 import { isDesktopApp } from '@/lib/platform';
 import { printDocument } from '@/lib/print-template';
 import { getRuntimeStoreId } from '@/lib/runtime-context';
+import { loadPrintProfile } from '@/print/printProfiles';
+import { printViaQzTray } from './qzTrayService';
 import { loadThermalPrintSettings } from './settings';
 import { resolveReceiptPrintData, type PrintableReceiptType } from './receipt-builders';
 
@@ -30,6 +32,7 @@ function buildPrintRoute(request: PrintReceiptRequest) {
 export async function printReceipt(request: PrintReceiptRequest): Promise<void> {
   const settings = loadThermalPrintSettings();
   const paperWidth = request.paperWidth ?? settings.paperWidth;
+  const printProfile = loadPrintProfile();
 
   if (isDesktopApp()) {
     const resolved = await resolveReceiptPrintData(request.type, request.id);
@@ -40,6 +43,27 @@ export async function printReceipt(request: PrintReceiptRequest): Promise<void> 
       printMode: 'compact',
     });
     return;
+  }
+
+  if (settings.backend === 'qz-tray') {
+    try {
+      const resolved = await resolveReceiptPrintData(request.type, request.id);
+      if (!resolved) throw new Error('Documento de impressão não encontrado.');
+      const printerName = (printProfile.printerName || '').trim();
+      if (!printerName) throw new Error('Selecione a impressora no sistema antes de usar QZ Tray.');
+
+      await printViaQzTray({
+        scriptUrl: settings.qzScriptUrl,
+        printerName,
+        paperWidth,
+        printData: resolved.printData,
+        company: resolved.thermalModel.company,
+        jobName: `Smart Tech - ${resolved.printData.tipo} ${resolved.printData.numero}`.trim(),
+      });
+      return;
+    } catch (error) {
+      console.warn('[Print] QZ Tray falhou, usando rota limpa:', error);
+    }
   }
 
   const route = buildPrintRoute(request);

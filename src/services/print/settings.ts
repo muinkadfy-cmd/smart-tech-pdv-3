@@ -1,10 +1,14 @@
 import { hydrateUiPref, readUiPrefLocal, setUiPref } from '@/lib/ui-prefs';
+import { isDesktopApp } from '@/lib/platform';
 import { loadPrintProfile, savePrintProfile } from '@/print/printProfiles';
 import { getThermalPrinterProfile, type ThermalPaperWidth, type ThermalPrinterProfileId } from './thermalProfiles';
+
+export type ThermalPrintBackend = 'browser-route' | 'qz-tray' | 'native-escpos';
 
 export interface ThermalPrintSettings {
   paperWidth: ThermalPaperWidth;
   printerProfile: ThermalPrinterProfileId;
+  backend: ThermalPrintBackend;
   usefulWidthMm: number;
   innerMarginMm: number;
   fontSizePx: number;
@@ -14,6 +18,7 @@ export interface ThermalPrintSettings {
   showQrCode: boolean;
   showFooterCut: boolean;
   autoCloseAfterPrint: boolean;
+  qzScriptUrl: string;
 }
 
 export const THERMAL_PRINT_SETTINGS_KEY = 'smart-tech-thermal-print-settings-v1';
@@ -24,6 +29,7 @@ let hydrationStarted = false;
 export const DEFAULT_THERMAL_PRINT_SETTINGS: ThermalPrintSettings = {
   paperWidth: '58',
   printerProfile: 'generic-pos-58',
+  backend: 'browser-route',
   usefulWidthMm: 48,
   innerMarginMm: 2,
   fontSizePx: 11,
@@ -33,6 +39,7 @@ export const DEFAULT_THERMAL_PRINT_SETTINGS: ThermalPrintSettings = {
   showQrCode: false,
   showFooterCut: true,
   autoCloseAfterPrint: true,
+  qzScriptUrl: 'https://cdn.jsdelivr.net/npm/qz-tray@2.2.5/qz-tray.js',
 };
 
 function ensureHydration() {
@@ -44,12 +51,16 @@ function ensureHydration() {
 function normalizeSettings(raw: Partial<ThermalPrintSettings> | null | undefined): ThermalPrintSettings {
   const profile = getThermalPrinterProfile(raw?.printerProfile);
   const paperWidth = raw?.paperWidth === '80' ? '80' : raw?.paperWidth === '58' ? '58' : profile.defaultPaperWidth;
+  const backend = raw?.backend === 'qz-tray' || raw?.backend === 'native-escpos' || raw?.backend === 'browser-route'
+    ? raw.backend
+    : (isDesktopApp() ? 'native-escpos' : 'browser-route');
 
   return {
     ...DEFAULT_THERMAL_PRINT_SETTINGS,
     ...raw,
     paperWidth,
     printerProfile: profile.id,
+    backend,
     usefulWidthMm: Number(raw?.usefulWidthMm) > 0 ? Number(raw?.usefulWidthMm) : profile.usefulWidthMm,
     innerMarginMm: Number(raw?.innerMarginMm) >= 0 ? Number(raw?.innerMarginMm) : profile.innerMarginMm,
     fontSizePx: Number(raw?.fontSizePx) >= 8 ? Number(raw?.fontSizePx) : profile.fontSizePx,
@@ -59,6 +70,7 @@ function normalizeSettings(raw: Partial<ThermalPrintSettings> | null | undefined
     showQrCode: raw?.showQrCode ?? DEFAULT_THERMAL_PRINT_SETTINGS.showQrCode,
     showFooterCut: raw?.showFooterCut ?? DEFAULT_THERMAL_PRINT_SETTINGS.showFooterCut,
     autoCloseAfterPrint: raw?.autoCloseAfterPrint ?? DEFAULT_THERMAL_PRINT_SETTINGS.autoCloseAfterPrint,
+    qzScriptUrl: String(raw?.qzScriptUrl || DEFAULT_THERMAL_PRINT_SETTINGS.qzScriptUrl),
   };
 }
 
@@ -99,4 +111,3 @@ export function buildThermalSettingsFromProfile(profileId: ThermalPrinterProfile
     lineHeight: profile.lineHeight,
   });
 }
-
