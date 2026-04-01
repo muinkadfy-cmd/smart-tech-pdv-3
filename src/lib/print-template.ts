@@ -1575,6 +1575,14 @@ export function printDocument(
   const isThermal = papel === '58mm' || papel === '80mm';
   const preset = papel === '58mm' ? '58mm' : '80mm';
 
+  if (!isDesktopApp() && isThermal) {
+    alert(
+      'Impressão térmica 58mm/80mm no navegador não é suportada com qualidade.\n\n' +
+      'Use "Abrir no app" para imprimir em modo silencioso RAW ESC/POS.'
+    );
+    return;
+  }
+
   const shouldUseEscposThermal =
     isDesktopApp() &&
     isThermal;
