@@ -43,9 +43,9 @@ export default function ThermalPrintSettings() {
   async function handleApplyReducedMode() {
     await update({
       printDensity: 'compact',
-      innerMarginMm: 1,
-      fontSizePx: settings.paperWidth === '80' ? 10 : 9,
-      lineHeight: 1.08,
+      innerMarginMm: 0.5,
+      fontSizePx: settings.paperWidth === '80' ? 11 : 10,
+      lineHeight: 1.04,
       showFooterCut: false,
     });
   }

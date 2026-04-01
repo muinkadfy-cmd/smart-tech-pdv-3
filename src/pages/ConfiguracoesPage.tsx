@@ -28,14 +28,14 @@ import './ConfiguracoesPage.css';
 
 const PrinterSettings = lazy(() => import('@/components/PrinterSettings'));
 
-type TamanhoPapel = 'A4' | '58mm' | '80mm';
+type TamanhoPapel = '58mm' | '80mm';
 
 function normalizeTamanhoPapel(raw: unknown): TamanhoPapel | null {
   const v = String(raw ?? '').trim();
   const lc = v.toLowerCase();
 
   // Compat/migração: versões antigas podem ter salvo "80"/"58" ou "a4".
-  if (v === 'A4' || lc === 'a4') return 'A4';
+  if (v === 'A4' || lc === 'a4') return '80mm';
   if (v === '80mm' || lc === '80mm' || v === '80') return '80mm';
   if (v === '58mm' || lc === '58mm' || v === '58') return '58mm';
 
@@ -97,7 +97,7 @@ function ConfiguracoesPage() {
   const session = getCurrentSession();
   const isRealSuperAdmin = session?.isSuperAdmin === true;
   const localOnly = isLocalOnly();
-  const desktopSuggestedDefault: TamanhoPapel = isDesktopApp() ? '80mm' : 'A4';
+  const desktopSuggestedDefault: TamanhoPapel = '80mm';
   const { company, loading: companyLoading, error: companyError, refresh: refreshCompany } = useCompany();
   const [companyForm, setCompanyForm] = useState({
     nome_fantasia: '',
@@ -681,14 +681,13 @@ function ConfiguracoesPage() {
 
   {/* Tamanho do Papel */}
   <div className="setting-section" style={{ marginTop: 'var(--spacing-md)' }}>
-    <div className="setting-label-group">
-      <label className="setting-label">Tamanho do Papel</label>
-      <span className="setting-description">Escolha A4 ou bobina térmica (58/80)</span>
-    </div>
+      <div className="setting-label-group">
+        <label className="setting-label">Tamanho do Papel</label>
+        <span className="setting-description">Escolha a bobina térmica usada na loja: 58mm ou 80mm.</span>
+      </div>
 
-    <div className="tamanho-papel-grid">
+      <div className="tamanho-papel-grid">
       {([
-            { value: 'A4', label: 'A4' },
             { value: '80mm', label: '80' },
             { value: '58mm', label: '58' },
           ] as const).map((opt) => (
@@ -700,18 +699,18 @@ function ConfiguracoesPage() {
           aria-pressed={tamanhoPapel === opt.value}
         >
           {tamanhoPapel === opt.value && <span className="tamanho-papel-check">✓</span>}
-          <span className="tamanho-papel-icon">{opt.value === 'A4' ? '📄' : '🧾'}</span>
+          <span className="tamanho-papel-icon">🧾</span>
           <span className="tamanho-papel-info">
             <strong>{opt.label}</strong>
-            <span>{opt.value === 'A4' ? 'Comprovantes e layouts amplos' : `Bobina térmica ${opt.label}mm`}</span>
+            <span>{`Bobina térmica ${opt.label}mm`}</span>
           </span>
         </button>
       ))}
-    </div>
+      </div>
 
-    <div className="printing-inline-status">
-      Atual: <strong>{tamanhoPapel === '58mm' ? '58' : tamanhoPapel === '80mm' ? '80' : 'A4'}</strong>
-    </div>
+      <div className="printing-inline-status">
+      Atual: <strong>{tamanhoPapel === '58mm' ? '58' : '80'}</strong>
+      </div>
   </div>
 
   {/* Modo compacto */}
@@ -1215,7 +1214,7 @@ function ConfiguracoesPage() {
             </div>
             <div className="info-item">
               <strong>Tamanho do Papel:</strong>
-              <span>{tamanhoPapel === 'A4' ? 'A4' : tamanhoPapel === '80mm' ? '80' : '58'}</span>
+              <span>{tamanhoPapel === '80mm' ? '80' : '58'}</span>
             </div>
             <div className="info-item">
               <strong>Tema Atual:</strong>

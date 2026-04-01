@@ -54,7 +54,7 @@
 }
 
 .thermal-receipt__store-name {
-  font-size: calc(var(--font-size-px) + 2px);
+  font-size: calc(var(--font-size-px) + var(--store-font-boost-px, 2px));
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -64,7 +64,7 @@
 .thermal-receipt__meta-line,
 .thermal-receipt__note,
 .thermal-receipt__footer-message {
-  font-size: calc(var(--font-size-px) - 1px);
+  font-size: calc(var(--font-size-px) + var(--detail-font-adjust-px, -1px));
 }
 
 .thermal-receipt__title {
@@ -91,7 +91,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 2mm;
+  gap: var(--row-gap-mm, 2mm);
 }
 
 .thermal-receipt__meta-value,
@@ -131,7 +131,7 @@
 
 .thermal-receipt__summary-row--grand {
   margin-top: var(--grand-gap-mm, 0.2mm);
-  font-size: calc(var(--font-size-px) + 2px);
+  font-size: calc(var(--font-size-px) + var(--grand-font-boost-px, 2px));
   font-weight: 700;
 }
 

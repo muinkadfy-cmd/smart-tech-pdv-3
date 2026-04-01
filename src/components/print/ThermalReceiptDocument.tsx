@@ -20,19 +20,23 @@ export default function ThermalReceiptDocument({ model, settings }: ThermalRecei
   const marginMm = `${settings.innerMarginMm}mm`;
   const densityVars = settings.printDensity === 'compact'
     ? {
-        sectionGap: '0.8mm',
-        headerGap: '0.65mm',
-        itemsPad: '0.55mm',
-        itemGap: '0.55mm',
+        sectionGap: '0.72mm',
+        headerGap: '0.55mm',
+        itemsPad: '0.48mm',
+        itemGap: '0.48mm',
         noteGap: '0.08mm',
-        totalPad: '0.6mm',
+        totalPad: '0.5mm',
         grandGap: '0.12mm',
-        cutGap: '0.45mm',
-        logoWidth: '14mm',
-        logoHeight: '7mm',
-        logoGap: '0.5mm',
+        cutGap: '0.35mm',
+        logoWidth: '12mm',
+        logoHeight: '6mm',
+        logoGap: '0.35mm',
         titleGap: '0.16mm',
         docGap: '0.2mm',
+        rowGap: '1.1mm',
+        storeBoost: '1px',
+        detailAdjust: '-2px',
+        grandBoost: '1px',
       }
     : settings.printDensity === 'dense'
       ? {
@@ -49,6 +53,10 @@ export default function ThermalReceiptDocument({ model, settings }: ThermalRecei
           logoGap: '0.9mm',
           titleGap: '0.35mm',
           docGap: '0.45mm',
+          rowGap: '2.3mm',
+          storeBoost: '3px',
+          detailAdjust: '0px',
+          grandBoost: '3px',
         }
       : {
           sectionGap: '1.1mm',
@@ -64,6 +72,10 @@ export default function ThermalReceiptDocument({ model, settings }: ThermalRecei
           logoGap: '0.8mm',
           titleGap: '0.25mm',
           docGap: '0.35mm',
+          rowGap: '1.8mm',
+          storeBoost: '2px',
+          detailAdjust: '-1px',
+          grandBoost: '2px',
         };
 
   return (
@@ -88,6 +100,10 @@ export default function ThermalReceiptDocument({ model, settings }: ThermalRecei
         ['--logo-gap-mm' as any]: densityVars.logoGap,
         ['--title-gap-mm' as any]: densityVars.titleGap,
         ['--doc-gap-mm' as any]: densityVars.docGap,
+        ['--row-gap-mm' as any]: densityVars.rowGap,
+        ['--store-font-boost-px' as any]: densityVars.storeBoost,
+        ['--detail-font-adjust-px' as any]: densityVars.detailAdjust,
+        ['--grand-font-boost-px' as any]: densityVars.grandBoost,
       }}
     >
       <div className="thermal-receipt__inner">
@@ -99,8 +115,6 @@ export default function ThermalReceiptDocument({ model, settings }: ThermalRecei
               alt={model.company.nome}
               loading="eager"
               decoding="sync"
-              crossOrigin="anonymous"
-              referrerPolicy="no-referrer"
             />
           ) : null}
           <div className="thermal-receipt__store-name">{model.company.nome}</div>
