@@ -71,11 +71,8 @@ export default function UpdateBanner() {
             <div className="update-banner__warning-title">Faça backup antes de atualizar no modo web.</div>
           </div>
 
-          <div className="update-banner__warning-steps">
-            <span>1. Gere o backup agora.</span>
-            <span>2. Atualize e aguarde a aplicação terminar.</span>
-            <span>3. Confira financeiro, fluxo de caixa e movimentações recentes.</span>
-            <span>4. Se notar falta de dados, restaure o backup mais recente.</span>
+          <div className="update-banner__warning-compact">
+            Atualize só depois do backup. Ao terminar, confira financeiro e fluxo de caixa. Se faltar algum dado, restaure o backup mais recente.
           </div>
         </div>
       </div>

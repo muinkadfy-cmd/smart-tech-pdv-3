@@ -53,11 +53,11 @@
 }
 
 .update-banner__warning {
-  max-width: 78ch;
+  max-width: 72ch;
   background: linear-gradient(180deg, rgba(255, 184, 0, 0.16), rgba(255, 120, 0, 0.1));
   border: 1px solid rgba(255, 184, 0, 0.3);
   border-radius: 14px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
@@ -66,7 +66,7 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 
 .update-banner__warning-pill {
@@ -86,21 +86,16 @@
 
 .update-banner__warning-title {
   color: #fff1bf;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.02em;
 }
 
-.update-banner__warning-steps {
-  display: grid;
-  gap: 5px;
-}
-
-.update-banner__warning-steps span {
+.update-banner__warning-compact {
   color: #fff4d6;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
 .update-banner__actions {
@@ -156,7 +151,7 @@
   }
 
   .update-banner__warning {
-    padding: 11px 12px;
+    padding: 10px 11px;
   }
 
   .update-banner__warning-head {
