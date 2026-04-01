@@ -44,6 +44,8 @@ export interface ThermalReceiptModel {
   total: number;
   paymentLabel?: string;
   installmentsLabel?: string;
+  checklistPassword?: string;
+  checklistPattern?: string;
   notes?: string[];
   footerMessage: string;
 }
@@ -359,6 +361,8 @@ export async function buildServiceOrderChecklistById(id: string): Promise<Resolv
         },
       ],
       total: 0,
+      checklistPassword: ordem.senhaCliente || undefined,
+      checklistPattern: ordem.senhaPadrao || undefined,
       notes,
       footerMessage: company.slogan || 'Obrigado pela preferencia. Volte sempre.',
     },

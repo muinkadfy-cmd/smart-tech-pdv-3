@@ -139,6 +139,46 @@
   text-align: center;
 }
 
+.thermal-receipt__notes--checklist {
+  border-bottom: 1px dashed #000;
+  padding-bottom: var(--totals-pad-mm, 0.8mm);
+}
+
+.thermal-pattern {
+  margin-top: var(--item-note-gap-mm, 0.1mm);
+}
+
+.thermal-pattern__label {
+  font-size: calc(var(--font-size-px) - 1px);
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 0.8mm;
+}
+
+.thermal-pattern__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.2mm;
+  width: 24mm;
+}
+
+.thermal-pattern__dot {
+  width: 6mm;
+  height: 6mm;
+  border: 1px solid #000;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--font-size-px) - 2px);
+  font-weight: 700;
+}
+
+.thermal-pattern__dot.is-active {
+  background: #000;
+  color: #fff;
+}
+
 .thermal-receipt__cut {
   margin-top: var(--cut-gap-mm, 0.6mm);
   padding-top: var(--cut-gap-mm, 0.6mm);

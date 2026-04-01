@@ -7,6 +7,18 @@ interface ThermalReceiptDocumentProps {
   settings: ThermalPrintSettings;
 }
 
+function parsePattern(value?: string): number[] {
+  if (!value) return [];
+  return Array.from(
+    new Set(
+      String(value)
+        .split(/[^1-9]+/)
+        .map((part) => Number(part))
+        .filter((part) => Number.isInteger(part) && part >= 1 && part <= 9),
+    ),
+  );
+}
+
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -18,6 +30,9 @@ export default function ThermalReceiptDocument({ model, settings }: ThermalRecei
   const paperWidthMm = settings.paperWidth === '80' ? '80mm' : '58mm';
   const usefulWidthMm = `${settings.usefulWidthMm}mm`;
   const marginMm = `${settings.innerMarginMm}mm`;
+  const checklistPattern = model.type === 'service-order-checklist'
+    ? parsePattern(model.checklistPattern)
+    : [];
   const densityVars = settings.printDensity === 'compact'
     ? {
         sectionGap: '0.72mm',
@@ -200,6 +215,34 @@ export default function ThermalReceiptDocument({ model, settings }: ThermalRecei
             <span className="thermal-receipt__summary-value">{formatCurrency(model.total)}</span>
           </div>
         </section>
+
+        {model.type === 'service-order-checklist' && (model.checklistPassword || checklistPattern.length) ? (
+          <section className="thermal-receipt__notes thermal-receipt__notes--checklist">
+            <div className="thermal-receipt__section-label">Seguranca do aparelho</div>
+            {model.checklistPassword ? (
+              <div className="thermal-receipt__note">Senha: {model.checklistPassword}</div>
+            ) : null}
+            {checklistPattern.length ? (
+              <div className="thermal-pattern" aria-label="Padrao de 9 pontos">
+                <div className="thermal-pattern__label">Padrao 9 pontos</div>
+                <div className="thermal-pattern__grid">
+                  {Array.from({ length: 9 }, (_, index) => {
+                    const point = index + 1;
+                    const order = checklistPattern.indexOf(point);
+                    return (
+                      <div
+                        key={point}
+                        className={`thermal-pattern__dot${order >= 0 ? ' is-active' : ''}`}
+                      >
+                        {order >= 0 ? order + 1 : ''}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
 
         {model.notes?.length ? (
           <section className="thermal-receipt__notes">
