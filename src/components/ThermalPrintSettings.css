@@ -49,6 +49,12 @@
   color: var(--text-secondary, #9aa4b2);
 }
 
+.thermal-settings__saveactions {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+}
+
 .thermal-settings__savebtn {
   min-height: 42px;
   padding: 0.75rem 1rem;
@@ -63,6 +69,51 @@
 
 .thermal-settings__savebtn:disabled {
   opacity: 0.72;
+}
+
+.thermal-settings__testbtn {
+  min-height: 42px;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(120, 140, 160, 0.22);
+  background: rgba(15, 21, 30, 0.78);
+  color: #f7fff9;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.thermal-settings__summary {
+  margin-bottom: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+}
+
+.thermal-settings__summary-item {
+  padding: 0.85rem 0.95rem;
+  border-radius: 14px;
+  border: 1px solid rgba(120, 140, 160, 0.14);
+  background: rgba(14, 21, 29, 0.72);
+  display: grid;
+  gap: 0.25rem;
+}
+
+.thermal-settings__summary-item span {
+  color: var(--text-secondary, #9aa4b2);
+  font-size: 0.82rem;
+}
+
+.thermal-settings__logo-status {
+  padding: 0.85rem 0.95rem;
+  border-radius: 14px;
+  border: 1px solid rgba(90, 210, 150, 0.15);
+  background: rgba(13, 23, 27, 0.74);
+  display: grid;
+  gap: 0.3rem;
+}
+
+.thermal-settings__logo-status span {
+  color: var(--text-secondary, #9aa4b2);
 }
 
 .thermal-settings__grid {
@@ -259,6 +310,11 @@
   }
 
   .thermal-settings__savebar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .thermal-settings__saveactions {
     flex-direction: column;
     align-items: stretch;
   }

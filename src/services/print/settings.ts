@@ -1,5 +1,6 @@
 import { hydrateUiPref, readUiPrefLocal, setUiPref } from '@/lib/ui-prefs';
 import { isDesktopApp } from '@/lib/platform';
+import { getRuntimeStoreIdOrDefault } from '@/lib/runtime-context';
 import { loadPrintProfile, savePrintProfile } from '@/print/printProfiles';
 import { getThermalPrinterProfile, type ThermalPaperWidth, type ThermalPrinterProfileId } from './thermalProfiles';
 
@@ -27,6 +28,10 @@ const LEGACY_PAPER_KEY = 'smart-tech-tamanho-papel';
 
 let hydrationStarted = false;
 
+function getThermalSettingsStorageKey(): string {
+  return `${THERMAL_PRINT_SETTINGS_KEY}:${getRuntimeStoreIdOrDefault('default')}`;
+}
+
 export const DEFAULT_THERMAL_PRINT_SETTINGS: ThermalPrintSettings = {
   paperWidth: '58',
   printerProfile: 'generic-pos-58',
@@ -48,6 +53,7 @@ function ensureHydration() {
   if (hydrationStarted) return;
   hydrationStarted = true;
   void hydrateUiPref(THERMAL_PRINT_SETTINGS_KEY);
+  void hydrateUiPref(getThermalSettingsStorageKey());
 }
 
 function normalizeSettings(raw: Partial<ThermalPrintSettings> | null | undefined): ThermalPrintSettings {
@@ -79,7 +85,8 @@ function normalizeSettings(raw: Partial<ThermalPrintSettings> | null | undefined
 
 export function loadThermalPrintSettings(): ThermalPrintSettings {
   ensureHydration();
-  const raw = readUiPrefLocal(THERMAL_PRINT_SETTINGS_KEY, '');
+  const scopedKey = getThermalSettingsStorageKey();
+  const raw = readUiPrefLocal(scopedKey, '') || readUiPrefLocal(THERMAL_PRINT_SETTINGS_KEY, '');
   if (!raw) return DEFAULT_THERMAL_PRINT_SETTINGS;
   try {
     return normalizeSettings(JSON.parse(raw) as Partial<ThermalPrintSettings>);
@@ -90,7 +97,9 @@ export function loadThermalPrintSettings(): ThermalPrintSettings {
 
 export async function saveThermalPrintSettings(settings: ThermalPrintSettings): Promise<void> {
   const normalized = normalizeSettings(settings);
-  await setUiPref(THERMAL_PRINT_SETTINGS_KEY, JSON.stringify(normalized));
+  const serialized = JSON.stringify(normalized);
+  await setUiPref(getThermalSettingsStorageKey(), serialized);
+  await setUiPref(THERMAL_PRINT_SETTINGS_KEY, serialized);
 
   const legacyPaper = normalized.paperWidth === '80' ? '80mm' : '58mm';
   await setUiPref(LEGACY_PAPER_KEY, legacyPaper);

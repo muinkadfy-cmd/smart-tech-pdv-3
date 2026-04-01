@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react';
 import { usePrintSettings } from '@/hooks/usePrintSettings';
 import { isDesktopApp } from '@/lib/platform';
+import { useCompany } from '@/contexts/CompanyContext';
 import { isQzTrayAvailable, listQzPrinters } from '@/services/print/qzTrayService';
+import { openPrintTest } from '@/services/print/receipt-service';
 import { THERMAL_PRINTER_PROFILES } from '@/services/print/thermalProfiles';
 import './ThermalPrintSettings.css';
 
 export default function ThermalPrintSettings() {
   const { settings, saving, update, applyProfile, saveCurrent } = usePrintSettings();
+  const { company } = useCompany();
   const [qzStatus, setQzStatus] = useState<'idle' | 'checking' | 'ready' | 'missing'>('idle');
   const [qzPrinters, setQzPrinters] = useState<string[]>([]);
   const [section, setSection] = useState<'geral' | 'qz' | 'visual'>('geral');
@@ -19,6 +22,12 @@ export default function ThermalPrintSettings() {
     return qzPrinters.includes(selected) ? qzPrinters : [selected, ...qzPrinters];
   }, [qzPrinters, settings.qzPrinterName]);
   const economyModeActive = settings.printDensity === 'compact' && settings.fontSizePx <= 10 && settings.innerMarginMm <= 1.5;
+  const activeProfile = THERMAL_PRINTER_PROFILES[settings.printerProfile];
+  const logoStatus = !settings.showLogo
+    ? 'Logo desativada nesta impressão'
+    : company?.logo_url
+      ? 'Logo encontrada e pronta para o cupom'
+      : 'Sem logo cadastrada nos dados da empresa';
 
   async function handleApplyNormalMode() {
     const profile = THERMAL_PRINTER_PROFILES[settings.printerProfile];
@@ -77,14 +86,42 @@ export default function ThermalPrintSettings() {
           <strong>Salvar configurações da impressora</strong>
           <span>Tudo que você selecionar aqui fica gravado localmente para não perder ao atualizar a página.</span>
         </div>
-        <button
-          type="button"
-          className="thermal-settings__savebtn"
-          onClick={() => { void saveCurrent(); }}
-          disabled={saving}
-        >
-          {saving ? 'Salvando...' : 'Salvar configurações'}
-        </button>
+        <div className="thermal-settings__saveactions">
+          <button
+            type="button"
+            className="thermal-settings__testbtn"
+            onClick={() => openPrintTest()}
+          >
+            Impressão de teste
+          </button>
+          <button
+            type="button"
+            className="thermal-settings__savebtn"
+            onClick={() => { void saveCurrent(); }}
+            disabled={saving}
+          >
+            {saving ? 'Salvando...' : 'Salvar configurações'}
+          </button>
+        </div>
+      </div>
+
+      <div className="thermal-settings__summary">
+        <div className="thermal-settings__summary-item">
+          <span>Papel</span>
+          <strong>{settings.paperWidth}mm</strong>
+        </div>
+        <div className="thermal-settings__summary-item">
+          <span>Perfil</span>
+          <strong>{activeProfile.label}</strong>
+        </div>
+        <div className="thermal-settings__summary-item">
+          <span>Impressora</span>
+          <strong>{settings.qzPrinterName || 'Não selecionada'}</strong>
+        </div>
+        <div className="thermal-settings__summary-item">
+          <span>Modo</span>
+          <strong>{economyModeActive ? 'Reduzido' : 'Normal/Denso'}</strong>
+        </div>
       </div>
 
       <div className="thermal-settings__tabs" role="tablist" aria-label="Seções da impressão térmica">
@@ -249,6 +286,11 @@ export default function ThermalPrintSettings() {
           <div className="thermal-settings__intro-card">
             <strong>Visual e acabamento</strong>
             <p>Ajuste o espaço interno, a densidade do texto e os elementos visuais do cupom para ficar limpo e econômico.</p>
+          </div>
+
+          <div className="thermal-settings__logo-status">
+            <strong>Status da logo</strong>
+            <span>{logoStatus}</span>
           </div>
 
           <div className="thermal-settings__mode-cards">

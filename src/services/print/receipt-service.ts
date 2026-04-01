@@ -29,6 +29,13 @@ function buildPrintRoute(request: PrintReceiptRequest) {
   return `/print/${request.type}/${encodeURIComponent(request.id)}?${params.toString()}`;
 }
 
+export function openPrintTest(): void {
+  const route = buildPrintRoute({ type: 'test', id: 'sample' });
+  if (typeof window !== 'undefined') {
+    window.location.href = route;
+  }
+}
+
 export async function printReceipt(request: PrintReceiptRequest): Promise<void> {
   const settings = loadThermalPrintSettings();
   const paperWidth = request.paperWidth ?? settings.paperWidth;

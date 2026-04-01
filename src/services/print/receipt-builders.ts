@@ -7,7 +7,7 @@ import { getRecibos } from '@/lib/recibos';
 import { getVendasAsync } from '@/lib/vendas';
 import type { EmpresaInfo, PrintData } from '@/lib/print-template';
 
-export type PrintableReceiptType = 'sale' | 'receipt' | 'service-order';
+export type PrintableReceiptType = 'sale' | 'receipt' | 'service-order' | 'test';
 
 export interface ThermalReceiptLineItem {
   label: string;
@@ -285,9 +285,53 @@ export async function buildServiceOrderReceiptById(id: string): Promise<Resolved
   };
 }
 
+export async function buildTestReceipt(): Promise<ResolvedReceiptPrintData> {
+  const company = await resolveCompanyInfo();
+  const now = new Date().toISOString();
+
+  return {
+    printData: {
+      tipo: 'venda',
+      numero: 'TESTE-001',
+      clienteNome: 'Cliente de teste',
+      clienteTelefone: '(43) 99999-9999',
+      clienteEndereco: 'Rua Exemplo, 123',
+      data: now,
+      itens: [
+        { nome: 'Impressão térmica 58/80mm', quantidade: 1, preco: 25 },
+        { nome: 'Teste de alinhamento', quantidade: 1, preco: 0 },
+      ],
+      valorTotal: 25,
+      valorBruto: 25,
+      formaPagamento: 'dinheiro',
+      observacoes: 'Cupom de teste para validar papel, fonte, logo e alinhamento.',
+    },
+    thermalModel: {
+      type: 'test',
+      title: 'Impressão de teste',
+      documentNumber: 'TESTE-001',
+      dateLabel: formatDateLabel(now),
+      customerName: 'Cliente de teste',
+      customerPhone: '(43) 99999-9999',
+      customerAddress: 'Rua Exemplo, 123',
+      company,
+      items: [
+        { label: 'Impressão térmica 58/80mm', quantity: 1, unitPrice: 25, total: 25, note: 'Valida largura e espaçamento' },
+        { label: 'Teste de alinhamento', quantity: 1, unitPrice: 0, total: 0, note: 'Confere corte e centralização' },
+      ],
+      subtotal: 25,
+      total: 25,
+      paymentLabel: 'DINHEIRO',
+      notes: ['Se este cupom saiu correto, a impressora está pronta para uso.'],
+      footerMessage: company.slogan || 'Obrigado pela preferencia. Volte sempre.',
+    },
+  };
+}
+
 export async function resolveReceiptPrintData(type: PrintableReceiptType, id: string): Promise<ResolvedReceiptPrintData | null> {
   if (type === 'sale') return buildSaleReceiptById(id);
   if (type === 'receipt') return buildReceiptById(id);
   if (type === 'service-order') return buildServiceOrderReceiptById(id);
+  if (type === 'test') return buildTestReceipt();
   return null;
 }
