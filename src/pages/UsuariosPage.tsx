@@ -28,6 +28,24 @@ const ROLE_OPTIONS: Array<{ value: UserRole; label: string }> = [
   { value: 'tecnico', label: 'Tecnico' },
 ];
 
+const ROLE_HELP: Record<UserRole, { title: string; description: string; tone: 'info' | 'warning' | 'success' }> = {
+  admin: {
+    title: 'Acesso total da loja',
+    description: 'Pode gerenciar usuarios, configuracoes, licenca e toda a operacao da loja.',
+    tone: 'warning',
+  },
+  atendente: {
+    title: 'Atendimento e vendas',
+    description: 'Ideal para balcão, clientes, vendas e rotinas do dia a dia da loja.',
+    tone: 'success',
+  },
+  tecnico: {
+    title: 'Assistência técnica',
+    description: 'Ideal para ordens de serviço e funcoes tecnicas liberadas pelo admin.',
+    tone: 'info',
+  },
+};
+
 function roleLabel(role: UserRole): string {
   return ROLE_OPTIONS.find((option) => option.value === role)?.label || role;
 }
@@ -78,6 +96,7 @@ export default function UsuariosPage() {
   const pageSubtitle = superAdmin
     ? 'Gerencie a conta principal e os usuarios das lojas dentro do escopo atual.'
     : 'Crie e mantenha usuarios da sua loja sem misturar acessos com outras lojas.';
+  const selectedRoleHelp = ROLE_HELP[formRole];
 
   async function loadData() {
     setLoading(true);
@@ -425,7 +444,7 @@ export default function UsuariosPage() {
               <h2>Novo usuario</h2>
               <p>
                 {superAdmin
-                  ? 'O novo usuario sera criado no store_id atualmente ativo no sistema.'
+                  ? 'O novo usuario sera criado na loja atual selecionada no sistema.'
                   : 'Crie usuarios que operam somente dentro da sua loja.'}
               </p>
             </div>
@@ -468,6 +487,14 @@ export default function UsuariosPage() {
                   autoComplete="new-password"
                 />
               </div>
+            </div>
+
+            <div className={`usuarios-role-help usuarios-role-help-${selectedRoleHelp.tone}`}>
+              <strong>{selectedRoleHelp.title}</strong>
+              <p>{selectedRoleHelp.description}</p>
+              {formRole === 'admin' ? (
+                <span>Use este perfil apenas para quem realmente vai administrar a loja.</span>
+              ) : null}
             </div>
 
             <div className="form-actions">
