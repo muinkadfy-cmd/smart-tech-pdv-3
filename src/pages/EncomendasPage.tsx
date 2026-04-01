@@ -12,6 +12,7 @@ import Guard from '@/components/Guard';
 import ReadOnlyBanner from '@/components/ReadOnlyBanner';
 import { showToast } from '@/components/ui/ToastContainer';
 import Pagination from '@/components/ui/Pagination';
+import PageUsageHint from '@/components/ui/PageUsageHint';
 import './EncomendasPage.css';
 
 const ITEMS_PER_PAGE = 12;
@@ -305,6 +306,14 @@ function EncomendasPage() {
           </button>
         </Guard>
       </div>
+
+      <PageUsageHint
+        items={[
+          { label: 'Onde mexer', text: 'Cadastre a encomenda e atualize o status até receber ou entregar.' },
+          { label: 'Como usar', text: 'Relacione cliente, produto, fornecedor e previsão para não perder prazo.' },
+          { label: 'O que verificar', text: 'Confira atraso, valor e status antes de avisar o cliente.' },
+        ]}
+      />
 
       <Modal
         isOpen={mostrarForm}

@@ -21,6 +21,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import PageToolbar from '@/components/ui/PageToolbar';
 import EmptyState from '@/components/ui/EmptyState';
 import SkeletonList from '@/components/ui/SkeletonList';
+import PageUsageHint from '@/components/ui/PageUsageHint';
 
 const PERIOD_LABELS: Record<'hoje' | '7dias' | 'mes' | 'personalizado', string> = {
   hoje: 'Hoje',
@@ -340,6 +341,14 @@ function CobrancasPage() {
     </Guard>
   }
 />
+
+      <PageUsageHint
+        items={[
+          { label: 'Onde mexer', text: 'Crie e atualize cobranças por status, vencimento e pagamento.' },
+          { label: 'Como usar', text: 'Mantenha cliente, valor e vencimento corretos para não perder controle.' },
+          { label: 'O que verificar', text: 'Confirme status pago, vencido ou pendente antes de imprimir.' },
+        ]}
+      />
 
 
       <Modal

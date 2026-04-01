@@ -9,6 +9,7 @@ import Guard from '@/components/Guard';
 import ReadOnlyBanner from '@/components/ReadOnlyBanner';
 import { canCreate, canDelete, canEdit } from '@/lib/permissions';
 import { isReadOnlyMode } from '@/lib/license';
+import PageUsageHint from '@/components/ui/PageUsageHint';
 import './FornecedoresPage.css';
 
 type FornecedorInput = {
@@ -213,6 +214,14 @@ function FornecedoresPage() {
         <h1>Fornecedores</h1>
         <p>Centralize contatos, sites e disponibilidade dos parceiros em uma visão mais organizada.</p>
       </div>
+
+      <PageUsageHint
+        items={[
+          { label: 'Onde mexer', text: 'Cadastre fornecedores com nome claro, telefone e site útil.' },
+          { label: 'Como usar', text: 'Mantenha só parceiros ativos para consulta rápida da equipe.' },
+          { label: 'O que verificar', text: 'Revise contato e status antes de editar ou excluir.' },
+        ]}
+      />
 
       <div className="fornecedores-resumo">
         <div className="resumo-card">

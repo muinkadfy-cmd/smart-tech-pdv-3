@@ -9,6 +9,7 @@ import MovimentacaoExpandableCard from '@/components/MovimentacaoExpandableCard'
 import ReadOnlyBanner from '@/components/ReadOnlyBanner';
 import PageHeader from '@/components/ui/PageHeader';
 import InfoBanner from '@/components/ui/InfoBanner';
+import PageUsageHint from '@/components/ui/PageUsageHint';
 import StatCard from '@/components/ui/StatCard';
 import FilterBar from '@/components/ui/FilterBar';
 import EmptyState from '@/components/ui/EmptyState';
@@ -226,6 +227,14 @@ useEffect(() => {
               Visão <strong>gerencial</strong> (resultado por origem). Para o dinheiro disponível no caixa (entrada/saída real), use <strong>Fluxo de Caixa</strong>.
             </InfoBanner>
           }
+        />
+
+        <PageUsageHint
+          items={[
+            { label: 'Onde ver', text: 'Leia saldo, serviços, vendas e gastos nos cartões do período.' },
+            { label: 'Onde mexer', text: 'Use os filtros para separar lançamentos por tipo e data.' },
+            { label: 'O que verificar', text: 'Antes de excluir algo, confira origem e impacto no resultado.' },
+          ]}
         />
 
         <div className="st-stats-grid st-stats-grid--dense">

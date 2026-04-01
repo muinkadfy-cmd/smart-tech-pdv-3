@@ -13,6 +13,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import PageToolbar from '@/components/ui/PageToolbar';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import InfoBanner from '@/components/ui/InfoBanner';
+import PageUsageHint from '@/components/ui/PageUsageHint';
 import WhatsAppButton from '@/components/ui/WhatsAppButton';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import PrintButton from '@/components/ui/PrintButton';
@@ -938,6 +939,14 @@ function OrdensPage() {
             </button>
           </Guard>
         }
+      />
+
+      <PageUsageHint
+        items={[
+          { label: 'Onde mexer', text: 'Abra nova OS para entrada, andamento, checklist e entrega do aparelho.' },
+          { label: 'Como usar', text: 'Preencha cliente, equipamento, defeito e valor para manter o histórico claro.' },
+          { label: 'O que verificar', text: 'Confirme status, pagamento e impressão antes de entregar.' },
+        ]}
       />
 
 <Modal

@@ -21,6 +21,7 @@ import ReadOnlyBanner from '@/components/ReadOnlyBanner';
 import PageHeader from '@/components/ui/PageHeader';
 import PageToolbar from '@/components/ui/PageToolbar';
 import InfoBanner from '@/components/ui/InfoBanner';
+import PageUsageHint from '@/components/ui/PageUsageHint';
 import { showToast } from '@/components/ui/ToastContainer';
 import PasswordPrompt, { usePasswordPrompt } from '@/components/ui/PasswordPrompt';
 import { printReceipt } from '@/services/print/receipt-service';
@@ -711,6 +712,14 @@ const descNum = parseMoneyBR(rawDesc);
             </Guard>
           </div>
         }
+      />
+
+      <PageUsageHint
+        items={[
+          { label: 'Onde mexer', text: 'Use Venda rápida no balcão e Nova venda para um fluxo mais completo.' },
+          { label: 'Como usar', text: 'Adicione itens, revise pagamento e confirme o total antes de finalizar.' },
+          { label: 'O que verificar', text: 'Cheque cliente, desconto, taxa e comprovante antes de concluir.' },
+        ]}
       />
 
       <Modal

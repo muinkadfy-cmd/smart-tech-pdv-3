@@ -5,6 +5,7 @@ import { produtosRepo } from '@/lib/repositories';
 import { showToast } from '@/components/ui/ToastContainer';
 import Pagination from '@/components/ui/Pagination';
 import { useDebounce } from '@/hooks/useDebounce';
+import PageUsageHint from '@/components/ui/PageUsageHint';
 import './EstoquePage.css';
 
 const ITEMS_PER_PAGE = 24;
@@ -189,6 +190,14 @@ function EstoquePage() {
           {produtos.length} exibidos
         </div>
       </div>
+
+      <PageUsageHint
+        items={[
+          { label: 'Onde ver', text: 'Use os resumos para achar itens zerados ou com estoque baixo.' },
+          { label: 'Onde mexer', text: 'Busque o produto e ajuste só o saldo que precisa corrigir.' },
+          { label: 'O que verificar', text: 'Confira estoque atual e impacto no giro antes de salvar.' },
+        ]}
+      />
 
       <div className="resumo-estoque">
         <div className="resumo-card">

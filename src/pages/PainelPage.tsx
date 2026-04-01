@@ -9,6 +9,7 @@ import { getOrdens } from '@/lib/ordens';
 import { getCobrancas } from '@/lib/cobrancas';
 import { getRecibos } from '@/lib/recibos';
 import { getUsadosEmEstoque, getVendasUsados } from '@/lib/usados';
+import PageUsageHint from '@/components/ui/PageUsageHint';
 import './painel.css';
 
 type Tone = 'emerald' | 'blue' | 'amber' | 'violet' | 'slate';
@@ -110,9 +111,13 @@ function PainelPage() {
 
     window.addEventListener('storage', atualizarPainel);
     window.addEventListener('smart-tech-venda-criada', atualizarPainel);
+    window.addEventListener('smart-tech-venda-deletada', atualizarPainel as any);
     window.addEventListener('smart-tech-movimentacao-criada', atualizarPainel);
     window.addEventListener('smart-tech-ordem-criada', atualizarPainel);
     window.addEventListener('smart-tech-ordem-atualizada', atualizarPainel);
+    window.addEventListener('smart-tech-ordem-deletada', atualizarPainel as any);
+    window.addEventListener('smart-tech-backup-restored', atualizarPainel as any);
+    window.addEventListener('smarttech:store-changed', atualizarPainel as any);
 
     const t = window.setInterval(() => {
       if (document.visibilityState === 'visible') atualizarPainel();
@@ -122,9 +127,13 @@ function PainelPage() {
       window.clearInterval(t);
       window.removeEventListener('storage', atualizarPainel);
       window.removeEventListener('smart-tech-venda-criada', atualizarPainel);
+      window.removeEventListener('smart-tech-venda-deletada', atualizarPainel as any);
       window.removeEventListener('smart-tech-movimentacao-criada', atualizarPainel);
       window.removeEventListener('smart-tech-ordem-criada', atualizarPainel);
       window.removeEventListener('smart-tech-ordem-atualizada', atualizarPainel);
+      window.removeEventListener('smart-tech-ordem-deletada', atualizarPainel as any);
+      window.removeEventListener('smart-tech-backup-restored', atualizarPainel as any);
+      window.removeEventListener('smarttech:store-changed', atualizarPainel as any);
     };
   }, []);
 
@@ -166,6 +175,14 @@ function PainelPage() {
           <p className="page-subtitle">Painel limpo e rápido para operar o caixa e acompanhar os módulos.</p>
         </div>
       </header>
+
+      <PageUsageHint
+        items={[
+          { label: 'Onde ver', text: 'Acompanhe caixa, vendas e alertas do dia nos cartões principais.' },
+          { label: 'Onde mexer', text: 'Use o menu lateral para entrar no módulo que precisar de ajuste.' },
+          { label: 'O que verificar', text: 'Confira movimentações recentes e sinais fora do padrão antes de agir.' },
+        ]}
+      />
 
       <section className="panel-section">
         <div className="section-head">

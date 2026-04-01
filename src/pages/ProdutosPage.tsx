@@ -22,6 +22,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import PageToolbar from '@/components/ui/PageToolbar';
 import EmptyState from '@/components/ui/EmptyState';
 import SegmentedControl from '@/components/ui/SegmentedControl';
+import PageUsageHint from '@/components/ui/PageUsageHint';
 import './ProdutosPage.css';
 
 function ProdutosPage() {
@@ -509,6 +510,14 @@ function ProdutosPage() {
           </Guard>
         }
       >
+        <PageUsageHint
+          items={[
+            { label: 'Onde mexer', text: 'Cadastre preço, estoque, categoria e status para vender com mais segurança.' },
+            { label: 'Como usar', text: 'Busque e filtre o catálogo para editar só o produto necessário.' },
+            { label: 'O que verificar', text: 'Revise código de barras, saldo e ativação antes de salvar.' },
+          ]}
+        />
+
         <PageToolbar
           left={
             <div className="filters-bar" style={{ marginTop: 0, padding: 0, border: 0, background: 'transparent' }}>

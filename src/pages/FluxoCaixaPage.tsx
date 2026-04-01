@@ -4,6 +4,7 @@ import ReadOnlyBanner from '@/components/ReadOnlyBanner';
 import StatCard from '@/components/ui/StatCard';
 import PageHeader from '@/components/ui/PageHeader';
 import InfoBanner from '@/components/ui/InfoBanner';
+import PageUsageHint from '@/components/ui/PageUsageHint';
 import FilterBar from '@/components/ui/FilterBar';
 import EmptyState from '@/components/ui/EmptyState';
 import SkeletonList from '@/components/ui/SkeletonList';
@@ -366,6 +367,14 @@ function FluxoCaixaPage() {
               </button>
             </>
           }
+        />
+
+        <PageUsageHint
+          items={[
+            { label: 'Onde ver', text: 'Acompanhe entradas, saídas e saldo real do caixa no período.' },
+            { label: 'Onde mexer', text: 'Use filtros por origem, pagamento e busca para achar divergências.' },
+            { label: 'O que verificar', text: 'Cheque data, responsável e valor antes de excluir um lançamento.' },
+          ]}
         />
 
         <section className="st-stats-grid st-stats-grid--dense">

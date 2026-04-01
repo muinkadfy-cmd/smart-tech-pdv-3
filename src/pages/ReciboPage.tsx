@@ -19,6 +19,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import PageToolbar from '@/components/ui/PageToolbar';
 import EmptyState from '@/components/ui/EmptyState';
 import SkeletonList from '@/components/ui/SkeletonList';
+import PageUsageHint from '@/components/ui/PageUsageHint';
 
 import { showToast } from '@/components/ui/ToastContainer';
 import { formatCurrency, formatDate } from '@/utils/format';
@@ -372,6 +373,14 @@ function ReciboPage() {
             </button>
           </Guard>
         }
+      />
+
+      <PageUsageHint
+        items={[
+          { label: 'Onde mexer', text: 'Gere recibos para venda, serviço, cobrança ou uso avulso.' },
+          { label: 'Como usar', text: 'Preencha cliente, descrição, valor e pagamento antes de emitir.' },
+          { label: 'O que verificar', text: 'Revise número, valor e impressão antes de compartilhar.' },
+        ]}
       />
 
       <PageToolbar>
