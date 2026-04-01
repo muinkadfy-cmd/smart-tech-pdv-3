@@ -33,6 +33,13 @@
   max-width: 60vw;
 }
 
+.update-banner__warning {
+  color: #fbbf24;
+  font-size: 11px;
+  line-height: 1.4;
+  max-width: 62vw;
+}
+
 .update-banner__actions {
   display: flex;
   gap: 8px;

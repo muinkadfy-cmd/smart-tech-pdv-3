@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUpdates } from '@/contexts/UpdateContext';
 import { isDesktopApp } from '@/lib/platform';
 import { diffSinceCommit } from '@/lib/changelog';
@@ -42,6 +43,7 @@ const SECTION_ICONS: Record<string, string> = {
 };
 
 function AtualizacoesPage() {
+  const navigate = useNavigate();
   const {
     manifest,
     changelog,
@@ -190,8 +192,14 @@ function AtualizacoesPage() {
   </div>
 ) : (
   <div className="updates-actions">
+          <button className="updates-btn secondary" onClick={() => navigate('/backup')}>
+            💾 Fazer backup
+          </button>
           <button className="updates-btn secondary" onClick={() => void checkNow()}>
             🔄 Verificar
+          </button>
+          <button className="updates-btn secondary" onClick={() => window.location.reload()}>
+            ↻ Recarregar página
           </button>
           <button className="updates-btn primary" onClick={() => void reloadApp()}>
             ⬇️ Atualizar agora
@@ -257,6 +265,14 @@ function AtualizacoesPage() {
                   Recomendamos fazer backup antes da atualização. Se o processo for interrompido ou o app fechar no meio,
                   pode haver risco de inconsistência temporária em movimentações do <strong>fluxo de caixa</strong>,
                   <strong> financeiro</strong> e outros dados recentes.
+                </div>
+                <div className="updates-inline-actions">
+                  <button className="updates-btn secondary" onClick={() => navigate('/backup')}>
+                    Abrir backup
+                  </button>
+                  <button className="updates-btn secondary" onClick={() => window.location.reload()}>
+                    Recarregar esta página
+                  </button>
                 </div>
               </div>
             </div>

@@ -60,9 +60,20 @@ export default function UpdateBanner() {
           {meta.version ? `${meta.isNewVersion ? 'Versão' : 'Build de manutenção'} ${meta.version}` : 'Atualização do app pronta para instalar'}
           {pwaNeedRefresh ? ' • pronta para aplicar' : ''}
         </span>
+        <small className="update-banner__warning">
+          Faça backup antes de atualizar. Se o processo for interrompido, pode haver inconsistência temporária no financeiro e fluxo de caixa.
+        </small>
       </div>
 
       <div className="update-banner__actions">
+        <button
+          type="button"
+          className="update-banner__btn secondary"
+          onClick={() => navigate('/backup')}
+        >
+          Fazer backup
+        </button>
+
         <button
           type="button"
           className="update-banner__btn"

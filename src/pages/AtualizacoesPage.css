@@ -45,6 +45,13 @@
   flex-wrap: wrap;
 }
 
+.updates-inline-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
 .updates-kpis {
   margin-top: 12px;
   display: grid;
@@ -216,6 +223,7 @@
   .updates-page { padding: 12px; }
   .updates-title h1 { font-size: 1.15rem; }
   .updates-kpis { grid-template-columns: 1fr; }
+  .updates-inline-actions { flex-direction: column; }
 }
 
 
