@@ -6,6 +6,20 @@
 import { useEffect, useState } from 'react';
 import { getLicenseStatus, getLicenseStatusAsync } from '@/lib/license';
 
+function isPermanent(status: ReturnType<typeof getLicenseStatus>) {
+  const message = String(status.message || '').toLowerCase();
+  const plan = String(status.payload?.plan || '').toLowerCase();
+  const validUntil = status.validUntil ? new Date(status.validUntil) : null;
+
+  if (plan.includes('lifetime') || plan.includes('permanent') || plan.includes('vitalicia') || plan.includes('vitalícia')) {
+    return true;
+  }
+  if (message.includes('permanente') || message.includes('lifetime') || message.includes('vitalicia') || message.includes('vitalícia')) {
+    return true;
+  }
+  return Boolean(validUntil && validUntil.getFullYear() >= 2099);
+}
+
 function LicenseStatusWidget() {
   const [status, setStatus] = useState(getLicenseStatus());
 
@@ -22,6 +36,7 @@ function LicenseStatusWidget() {
   const getStatusColor = () => {
     switch (status.status) {
       case 'active':
+      case 'trial':
         return 'var(--success, #10b981)';
       case 'expired':
         return 'var(--error, #ef4444)';
@@ -32,8 +47,10 @@ function LicenseStatusWidget() {
 
   const getStatusIcon = () => {
     switch (status.status) {
+      case 'trial':
+        return '🧪';
       case 'active':
-        return '✅';
+        return isPermanent(status) ? '🟢' : '✅';
       case 'expired':
         return '❌';
       default:
@@ -41,15 +58,23 @@ function LicenseStatusWidget() {
     }
   };
 
+  const getStatusLabel = () => {
+    if (status.status === 'trial') return 'Modo trial';
+    if (status.status === 'active' && isPermanent(status)) return 'Sistema ativado permanente';
+    if (status.status === 'active') return 'Sistema ativado';
+    if (status.status === 'expired') return 'Ativação necessária';
+    return status.message;
+  };
+
   return (
     <div className="info-list">
       <div className="info-item">
         <strong>Status:</strong>
         <span style={{ color: getStatusColor() }}>
-          {getStatusIcon()} {status.message}
+          {getStatusIcon()} {getStatusLabel()}
         </span>
       </div>
-      {status.status === 'active' && status.validUntil && (
+      {(status.status === 'active' || status.status === 'trial') && status.validUntil && !isPermanent(status) && (
         <div className="info-item">
           <strong>Validade:</strong>
           <span>{new Date(status.validUntil).toLocaleDateString('pt-BR')}</span>

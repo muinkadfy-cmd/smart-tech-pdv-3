@@ -36,6 +36,58 @@
   font-weight: 600;
 }
 
+.license-visibility-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.license-visibility-card--active,
+.license-visibility-card--trial {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.license-visibility-card--expired,
+.license-visibility-card--blocked,
+.license-visibility-card--invalid,
+.license-visibility-card--not_found {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.license-visibility-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.18);
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.license-visibility-copy {
+  min-width: 0;
+}
+
+.license-visibility-copy strong {
+  display: block;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.license-visibility-copy p {
+  margin: 0.25rem 0 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
 .license-details {
   margin-bottom: var(--spacing-lg);
 }
@@ -72,6 +124,24 @@
   display: flex;
   gap: var(--spacing-sm);
   flex-wrap: wrap;
+}
+
+.license-admin-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.license-admin-toggle {
+  align-self: flex-start;
+}
+
+.license-admin-body {
+  border-top: 1px solid var(--border-light);
+  padding-top: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
 }
 
 .license-info {
@@ -524,6 +594,10 @@
     text-align: center;
   }
 
+  .license-visibility-card {
+    align-items: flex-start;
+  }
+
   .license-activation-form {
     gap: var(--spacing-md, 16px);
   }
@@ -643,6 +717,15 @@
 
   .license-card {
     padding: var(--spacing-sm, 12px);
+  }
+
+  .license-visibility-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .license-admin-toggle {
+    width: 100%;
   }
 
   .info-card {
