@@ -351,7 +351,10 @@ export function generatePrintTemplate(
   const scale = getPrintScale();
   const isEconomy50 = scale <= 0.75; // hoje só existe 1.0 ou 0.5
 
-  const modo: PrintMode = printMode ?? getPrintMode();
+  const modoBase: PrintMode = printMode ?? getPrintMode();
+  const modo: PrintMode = papel === '58mm' || papel === '80mm'
+    ? 'compact'
+    : modoBase;
 
   // CSS do @page: em economia reduzimos margens (ganho real de altura) sem achatar a largura.
   const pageCss = (() => {
@@ -1184,25 +1187,148 @@ export function generatePrintTemplate(
           body.paper-80mm {
             width: 80mm;
             max-width: 80mm;
-            padding: ${modo === 'compact' ? '4px' : '6px'};
+            padding: 3px 4px;
             margin: 0;
             min-height: auto;
             height: auto;
             overflow: visible;
             background: #fff;
             color: #000;
+            font-family: "Courier New", "Lucida Console", monospace;
+            line-height: 1.18;
           }
           body.paper-58mm {
             width: 58mm;
             max-width: 58mm;
-            padding: ${modo === 'compact' ? '3px' : '4px'};
+            padding: 2px 3px;
             margin: 0;
-            font-size: ${modo === 'compact' ? '9px' : '10px'};
+            font-size: 9px;
             min-height: auto;
             height: auto;
             overflow: visible;
             background: #fff;
             color: #000;
+            font-family: "Courier New", "Lucida Console", monospace;
+            line-height: 1.14;
+          }
+          body.paper-80mm *,
+          body.paper-58mm * {
+            color: #000 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+            filter: none !important;
+          }
+          body.paper-80mm .header,
+          body.paper-58mm .header {
+            margin-bottom: 5px;
+            padding-bottom: 2px;
+          }
+          body.paper-80mm .empresa-nome,
+          body.paper-58mm .empresa-nome {
+            font-size: 12px;
+            letter-spacing: 0.2px;
+            margin-bottom: 2px;
+          }
+          body.paper-80mm .empresa-meta,
+          body.paper-58mm .empresa-meta,
+          body.paper-80mm .empresa-endereco,
+          body.paper-58mm .empresa-endereco,
+          body.paper-80mm .empresa-slogan,
+          body.paper-58mm .empresa-slogan {
+            font-size: 8px;
+            line-height: 1.15;
+          }
+          body.paper-80mm .empresa-info-box,
+          body.paper-58mm .empresa-info-box,
+          body.paper-80mm .pagamento-info,
+          body.paper-58mm .pagamento-info {
+            gap: 3px;
+          }
+          body.paper-80mm .info-box,
+          body.paper-58mm .info-box,
+          body.paper-80mm .empresa-endereco-box,
+          body.paper-58mm .empresa-endereco-box,
+          body.paper-80mm .pagamento-box,
+          body.paper-58mm .pagamento-box {
+            border: 0;
+            padding: 0;
+            margin: 0;
+            font-size: 8px;
+          }
+          body.paper-80mm .separator-thick,
+          body.paper-80mm .separator-thin,
+          body.paper-58mm .separator-thick,
+          body.paper-58mm .separator-thin {
+            border-top-width: 1px;
+            margin: 3px 0;
+          }
+          body.paper-80mm .documento-titulo,
+          body.paper-58mm .documento-titulo {
+            font-size: 11px;
+            margin: 3px 0;
+          }
+          body.paper-80mm .documento-subtitulo,
+          body.paper-58mm .documento-subtitulo {
+            font-size: 9px;
+            margin: 1px 0 3px 0;
+          }
+          body.paper-80mm .info-section,
+          body.paper-58mm .info-section,
+          body.paper-80mm .observacoes-section,
+          body.paper-58mm .observacoes-section,
+          body.paper-80mm .valor-section,
+          body.paper-58mm .valor-section {
+            margin: 3px 0;
+            padding: 0;
+          }
+          body.paper-80mm .info-line,
+          body.paper-58mm .info-line,
+          body.paper-80mm .valor-item,
+          body.paper-58mm .valor-item {
+            font-size: 8px;
+            margin: 1px 0;
+            gap: 3px;
+          }
+          body.paper-80mm .info-label,
+          body.paper-58mm .info-label,
+          body.paper-80mm .info-value,
+          body.paper-58mm .info-value,
+          body.paper-80mm .info-full-label,
+          body.paper-58mm .info-full-label,
+          body.paper-80mm .info-full-value,
+          body.paper-58mm .info-full-value,
+          body.paper-80mm .observacoes-label,
+          body.paper-58mm .observacoes-label,
+          body.paper-80mm .observacoes-text,
+          body.paper-58mm .observacoes-text {
+            font-size: 8px;
+            line-height: 1.16;
+          }
+          body.paper-80mm .info-label,
+          body.paper-58mm .info-label {
+            min-width: 58px;
+          }
+          body.paper-80mm .valor-label,
+          body.paper-58mm .valor-label,
+          body.paper-80mm .valor-simbolo,
+          body.paper-58mm .valor-simbolo {
+            font-size: 9px;
+          }
+          body.paper-80mm .valor-principal,
+          body.paper-58mm .valor-principal {
+            font-size: 15px;
+            line-height: 1.05;
+          }
+          body.paper-80mm .assinatura,
+          body.paper-58mm .assinatura {
+            margin-top: 8px;
+            padding-top: 2px;
+            font-size: 8px;
+          }
+          body.paper-80mm .assinatura-line,
+          body.paper-58mm .assinatura-line {
+            margin: 3px 0;
           }
           /* Em papel tÃ©rmico, permitir quebra de linha (evita cortar texto) */
           body.paper-80mm .check-item,
@@ -1211,31 +1337,31 @@ export function generatePrintTemplate(
             overflow-wrap: anywhere;
             word-break: break-word;
           }
-          body.paper-58mm .empresa-nome { font-size: 12px; margin-bottom: 4px; }
+          body.paper-58mm .empresa-nome { font-size: 11px; margin-bottom: 2px; }
           body.paper-58mm .empresa-logo img { max-width: 34mm; max-height: 16mm; }
-          body.paper-58mm .empresa-info-box { gap: 4px; }
-          body.paper-58mm .empresa-meta { gap: 6px; font-size: 8px; }
+          body.paper-58mm .empresa-info-box { gap: 2px; }
+          body.paper-58mm .empresa-meta { gap: 4px; font-size: 8px; }
           body.paper-58mm .empresa-endereco { font-size: 8px; }
           body.paper-58mm .info-box,
           body.paper-58mm .empresa-endereco-box,
-          body.paper-58mm .empresa-slogan { font-size: 8px; padding: 2px 4px; }
+          body.paper-58mm .empresa-slogan { font-size: 8px; padding: 0; }
           body.paper-58mm .empresa-endereco-box { max-width: 100%; word-break: break-word; overflow-wrap: break-word; }
-          body.paper-58mm .separator-thick { margin: 4px 0; }
-          body.paper-58mm .separator-thin { margin: 3px 0; }
-          body.paper-58mm .documento-titulo { font-size: 11px; margin: 4px 0; }
-          body.paper-58mm .documento-subtitulo { font-size: 10px; margin: 2px 0 4px 0; }
-          body.paper-58mm .info-section { margin: 4px 0; }
-          body.paper-58mm .info-line { font-size: 9px; margin: 2px 0; }
+          body.paper-58mm .separator-thick { margin: 2px 0; }
+          body.paper-58mm .separator-thin { margin: 2px 0; }
+          body.paper-58mm .documento-titulo { font-size: 10px; margin: 2px 0; }
+          body.paper-58mm .documento-subtitulo { font-size: 8px; margin: 1px 0 2px 0; }
+          body.paper-58mm .info-section { margin: 2px 0; }
+          body.paper-58mm .info-line { font-size: 8px; margin: 1px 0; }
           body.paper-58mm .info-label,
           body.paper-58mm .info-value,
           body.paper-58mm .info-full-label,
-          body.paper-58mm .info-full-value { font-size: 9px; }
-          body.paper-58mm .info-label { min-width: 70px; }
-          body.paper-58mm .valor-section { margin: 6px 0; padding: 4px 0; }
-          body.paper-58mm .valor-label { font-size: 9px; }
-          body.paper-58mm .valor-principal { font-size: 16px; }
-          body.paper-58mm .valor-simbolo { font-size: 10px; }
-          body.paper-58mm .pagamento-box { font-size: 8px; padding: 2px 4px; }
+          body.paper-58mm .info-full-value { font-size: 8px; }
+          body.paper-58mm .info-label { min-width: 52px; }
+          body.paper-58mm .valor-section { margin: 3px 0; padding: 0; }
+          body.paper-58mm .valor-label { font-size: 8px; }
+          body.paper-58mm .valor-principal { font-size: 14px; }
+          body.paper-58mm .valor-simbolo { font-size: 8px; }
+          body.paper-58mm .pagamento-box { font-size: 8px; padding: 0; }
           body.paper-58mm .observacoes-section,
           body.paper-58mm .observacoes-label,
           body.paper-58mm .observacoes-text { font-size: 8px; }
@@ -1243,9 +1369,9 @@ export function generatePrintTemplate(
           body.paper-80mm .observacoes-text,
           body.paper-58mm .info-full-value,
           body.paper-80mm .info-full-value { text-align: left; }
-          body.paper-58mm .assinatura { margin-top: 12px; font-size: 9px; }
-          body.paper-58mm .assinatura-nome { font-size: 9px; }
-          body.paper-58mm .header { margin-bottom: 8px; padding-bottom: 4px; }
+          body.paper-58mm .assinatura { margin-top: 7px; font-size: 8px; }
+          body.paper-58mm .assinatura-nome { font-size: 8px; }
+          body.paper-58mm .header { margin-bottom: 4px; padding-bottom: 2px; }
           body.paper-80mm .empresa-logo img { max-width: 48mm; max-height: 22mm; }
           body.paper-A4 {
             width: 100%;
