@@ -40,6 +40,7 @@ export async function printReceipt(request: PrintReceiptRequest): Promise<void> 
   const settings = loadThermalPrintSettings();
   const paperWidth = request.paperWidth ?? settings.paperWidth;
   const printProfile = loadPrintProfile();
+  const thermalMode = settings.printDensity === 'compact' ? 'compact' : 'normal';
 
   if (isDesktopApp()) {
     const resolved = await resolveReceiptPrintData(request.type, request.id);
@@ -47,7 +48,7 @@ export async function printReceipt(request: PrintReceiptRequest): Promise<void> 
 
     printDocument(resolved.printData, {
       paperSize: paperWidth === '80' ? '80mm' : '58mm',
-      printMode: 'compact',
+      printMode: thermalMode,
     });
     return;
   }
@@ -63,6 +64,7 @@ export async function printReceipt(request: PrintReceiptRequest): Promise<void> 
         scriptUrl: settings.qzScriptUrl,
         printerName,
         paperWidth,
+        printMode: thermalMode,
         printData: resolved.printData,
         company: resolved.thermalModel.company,
         jobName: `Smart Tech - ${resolved.printData.tipo} ${resolved.printData.numero}`.trim(),

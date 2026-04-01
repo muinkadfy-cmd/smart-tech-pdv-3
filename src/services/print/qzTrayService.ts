@@ -1,5 +1,6 @@
 import { buildEscposReceiptFromPrintData } from '@/utils/escpos';
 import type { EmpresaInfo, PrintData } from '@/lib/print-template';
+import type { PrintMode } from '@/lib/print-template';
 
 declare global {
   interface Window {
@@ -76,6 +77,7 @@ export async function printViaQzTray(args: {
   scriptUrl: string;
   printerName: string;
   paperWidth: '58' | '80';
+  printMode: PrintMode;
   printData: PrintData;
   company: EmpresaInfo;
   jobName: string;
@@ -99,7 +101,7 @@ export async function printViaQzTray(args: {
     args.printData,
     args.company,
     args.paperWidth === '80' ? '80mm' : '58mm',
-    'compact',
+    args.printMode,
   );
 
   const payload = [{

@@ -325,7 +325,7 @@ export function buildEscposReceiptFromPrintData(
   // Initialize
   out.push(0x1b, 0x40); // ESC @
   // Linha um pouco mais "alta" para não ficar tudo grudado
-  escLineSpacing(out, compact ? 30 : 34);
+  escLineSpacing(out, compact ? 26 : 34);
   lf(out, 1); // respiro inicial (evita topo colado)
 
   // =========================
@@ -573,7 +573,7 @@ export function buildEscposReceiptFromPrintData(
   }
 
   // Footer spacing (evita cortar o fim / grudar proximo trabalho)
-  lf(out, compact ? 6 : 8);
+  lf(out, compact ? 4 : 8);
 
   // Cut (partial)
   out.push(0x1d, 0x56, 0x01);
