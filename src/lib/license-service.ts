@@ -424,7 +424,7 @@ export async function isLicenseActiveFromServer(): Promise<boolean> {
  * @returns Promise com resultado da operação
  */
 /**
- * Ativa licença de teste (7 dias) diretamente no Supabase
+ * Ativa licença de teste (15 dias) diretamente no Supabase
  */
 export async function activateTrialLicense(): Promise<{ success: boolean; error?: string; license?: LicenseData }> {
   const storeId = resolveLicenseStoreId();
@@ -444,11 +444,11 @@ export async function activateTrialLicense(): Promise<{ success: boolean; error?
 
   try {
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+    expiresAt.setDate(expiresAt.getDate() + 15);
     expiresAt.setHours(23, 59, 59, 999);
 
     if (import.meta.env.DEV) {
-      logger.log(`[LicenseService] 🔄 Ativando licença de teste (7 dias) no Supabase para store_id: ${storeId}`);
+      logger.log(`[LicenseService] 🔄 Ativando licença de teste (15 dias) no Supabase para store_id: ${storeId}`);
     }
 
     // Verificar se já existe licença

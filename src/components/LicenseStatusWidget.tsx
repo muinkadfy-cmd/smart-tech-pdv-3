@@ -59,10 +59,10 @@ function LicenseStatusWidget() {
   };
 
   const getStatusLabel = () => {
-    if (status.status === 'trial') return 'Modo trial';
+    if (status.status === 'trial') return 'Trial de 15 dias';
     if (status.status === 'active' && isPermanent(status)) return 'Sistema ativado permanente';
     if (status.status === 'active') return 'Sistema ativado';
-    if (status.status === 'expired') return 'Ativação necessária';
+    if (status.status === 'expired') return 'Trial encerrado - ativação necessária';
     return status.message;
   };
 

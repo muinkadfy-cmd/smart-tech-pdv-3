@@ -46,8 +46,8 @@ const LICENSE_TOKEN_KEY = 'smart-tech-license-token';
 const LICENSE_CACHE_KEY = 'smart-tech-license-cache'; // cache do último status validado
 const REMOTE_LICENSE_STATUS_KEY = 'smart-tech:license-status';
 
-// Trial (DEMO) - Desktop/PROD: permite uso por X dias sem licença.
-const TRIAL_DAYS = 7;
+// Trial (DEMO) - Desktop/PROD: permite uso por 15 dias sem licença.
+const TRIAL_DAYS = 15;
 const TRIAL_START_LS = 'smart-tech:trial-start-ms';
 const TRIAL_LAST_SEEN_LS = 'smart-tech:trial-last-seen-ms';
 
@@ -104,12 +104,12 @@ function trialStatusSync(): LicenseStatus | null {
   const daysRemaining = computeDaysRemainingCeil(endMs, nowMs);
 
   if (nowMs > endMs) {
-    return { status: 'expired', message: 'DEMO expirou - ative a licença', source: 'local', validUntil: endIso, daysRemaining: 0 };
+    return { status: 'expired', message: 'Período de teste encerrado - ativação necessária', source: 'local', validUntil: endIso, daysRemaining: 0 };
   }
 
   return {
     status: 'trial',
-    message: `Modo DEMO: ${daysRemaining} dia(s) restante(s)`,
+    message: `Trial de 15 dias: ${daysRemaining} dia(s) restante(s)`,
     source: 'local',
     validUntil: endIso,
     daysRemaining,
@@ -179,7 +179,7 @@ async function trialStatusAsync(): Promise<LicenseStatus> {
   if (nowMs > endMs) {
     return {
       status: 'expired',
-      message: 'DEMO expirou - ative a licença',
+      message: 'Período de teste encerrado - ativação necessária',
       source: 'local',
       validUntil: endIso,
       daysRemaining: 0,
@@ -189,7 +189,7 @@ async function trialStatusAsync(): Promise<LicenseStatus> {
 
   return {
     status: 'trial',
-    message: `Modo DEMO: ${daysRemaining} dia(s) restante(s)`,
+    message: `Trial de 15 dias: ${daysRemaining} dia(s) restante(s)`,
     source: 'local',
     validUntil: endIso,
     daysRemaining,
@@ -548,8 +548,8 @@ export function getLicenseStatus(): LicenseStatus {
     if (isLicenseMandatory()) {
       const tr = trialStatusSync();
       if (tr) return tr;
-      // sem info local ainda -> força fluxo async (que cria/valida o DEMO)
-      return { status: 'offline', message: 'Iniciando modo DEMO…', source: 'local' };
+      // sem info local ainda -> força fluxo async (que cria/valida o trial)
+      return { status: 'offline', message: 'Iniciando trial de 15 dias…', source: 'local' };
     }
     return { status: 'not_found', message: 'Sem licença (cole o token)', source: 'local' };
   }
@@ -619,7 +619,7 @@ export async function getLicenseStatusAsync(): Promise<LicenseStatus> {
   }
 
   if (!token) {
-    // Desktop/PROD (build de venda): DEMO automático por alguns dias.
+    // Desktop/PROD (build de venda): trial automático por 15 dias.
     if (isLicenseMandatory()) {
       const tr = await trialStatusAsync();
       writeCachedStatus(tr);
@@ -899,7 +899,7 @@ export function getTrialInfo(): { startedAt?: string; expiresAt?: string; lastSe
   };
 }
 
-/** Garante que o trial de 7 dias exista (cria na 1ª execução). */
+/** Garante que o trial de 15 dias exista (cria na 1ª execução). */
 export async function ensureTrial(): Promise<void> {
   if (!isLicenseMandatory()) return;
   const startMs = readNumberLS(TRIAL_START_LS);

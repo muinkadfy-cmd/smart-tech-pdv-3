@@ -48,9 +48,9 @@ function computeDaysRemaining(status: LicenseStatus): number | null {
 }
 
 function licenseLabel(status: LicenseStatus) {
-  if (status.status === 'trial') return 'Trial';
+  if (status.status === 'trial') return 'Trial 15 dias';
   if (status.status === 'active') return 'Licença ativa';
-  if (status.status === 'expired') return 'Trial expirado';
+  if (status.status === 'expired') return 'Trial encerrado';
   if (status.status === 'blocked') return 'Bloqueado';
   if (status.status === 'invalid') return 'Token inválido';
   if (status.status === 'not_found') return 'Ativação necessária';
@@ -168,9 +168,9 @@ export function StatusFooter() {
   const daysText = useMemo(() => {
     if (typeof daysRemaining !== 'number') return null;
     const d = Math.max(0, daysRemaining);
-    if (license.status === 'trial') return `Trial: ${d} dia(s) restantes — Ative para continuar usando`;
+    if (license.status === 'trial') return `Trial de 15 dias: ${d} dia(s) restantes — Configure tudo e ative depois para continuar usando`;
     if (license.status === 'active') return `Licença ativa — ${d} dia(s) restantes`;
-    if (license.status === 'expired') return 'Trial expirado — Ativação necessária';
+    if (license.status === 'expired') return 'Trial de 15 dias encerrado — Ativação necessária';
     if (license.status === 'not_found') return 'Ativação necessária';
     if (license.status === 'invalid') return 'Token inválido ou expirado';
     if (license.status === 'blocked') return 'Ativação necessária';

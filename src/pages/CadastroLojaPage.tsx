@@ -25,8 +25,9 @@ function buildCredentialsText(result: RegistrationResult): string {
     `Criado em: ${new Date(result.createdAt).toLocaleString('pt-BR')}`,
     '',
     'TRIAL INICIAL:',
-    '- Sua loja entra com 7 dias de teste liberados.',
-    '- Depois do periodo, a tela de ativacao exibira o contato comercial.',
+    '- Sua loja entra com 15 dias de teste liberados.',
+    '- Durante o trial, voce pode configurar a loja e testar a operacao completa.',
+    '- Depois do periodo, a ativacao sera exigida para continuar usando.',
     '- Suporte comercial e ativacao: (43) 99669-4751.',
     '',
     'IMPORTANTE:',
@@ -142,7 +143,7 @@ export default function CadastroLojaPage() {
             <p className="login-subtitle">
               {token
                 ? 'Conclua o acesso da sua conta com senha e store_id ja vinculados.'
-                : 'Cadastre a loja, ganhe 7 dias de teste, entre direto com e-mail, senha e store_id e guarde os dados de acesso.'}
+                : 'Cadastre a loja, ganhe 15 dias de teste, configure tudo com calma e guarde os dados de acesso.'}
             </p>
           </div>
 
@@ -206,7 +207,7 @@ export default function CadastroLojaPage() {
               </div>
 
               <div className="login-warning-box">
-                O sistema vai gerar um <strong>store_id</strong> exclusivo para a loja e liberar <strong>7 dias de teste</strong>. Esse codigo sera pedido no login para evitar misturar dados entre clientes.
+                O sistema vai gerar um <strong>store_id</strong> exclusivo para a loja e liberar <strong>15 dias de teste</strong>. Nesse periodo, a loja pode configurar tudo antes do bloqueio por ativacao.
               </div>
 
               <button type="submit" className="btn-primary" disabled={loading}>
@@ -229,7 +230,7 @@ export default function CadastroLojaPage() {
           ) : (
             <div className="login-form">
               <div className="login-success-box">
-                Cadastro criado com sucesso. Sua loja recebeu 7 dias de teste e ja pode entrar direto no sistema. Baixe o comprovante e guarde esses dados em local seguro.
+                Cadastro criado com sucesso. Sua loja recebeu 15 dias de teste e ja pode entrar direto no sistema. Aproveite para configurar tudo e guarde esses dados em local seguro.
               </div>
 
               <div className="login-credential-grid">

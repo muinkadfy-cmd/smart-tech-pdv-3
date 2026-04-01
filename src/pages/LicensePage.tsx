@@ -27,7 +27,7 @@ function isPermanentLicense(status: LicenseStatus): boolean {
 }
 
 function getCustomerModeLabel(status: LicenseStatus): string {
-  if (status.status === 'trial') return 'Modo trial';
+  if (status.status === 'trial') return 'Trial 15 dias';
   if (status.status === 'active' && isPermanentLicense(status)) return 'Sistema ativado permanente';
   if (status.status === 'active') return 'Sistema ativado';
   if (status.status === 'blocked') return 'Sistema bloqueado';
@@ -39,7 +39,7 @@ function getCustomerModeLabel(status: LicenseStatus): string {
 function getCustomerModeDescription(status: LicenseStatus): string {
   if (status.status === 'trial') {
     const days = typeof status.daysRemaining === 'number' ? `${status.daysRemaining} dia(s) restante(s)` : 'teste em andamento';
-    return `Loja liberada em avaliação com ${days}.`;
+    return `Loja liberada por 15 dias para configurar e testar tudo, com ${days}. Depois desse prazo, a ativação será exigida para continuar operando.`;
   }
   if (status.status === 'active' && isPermanentLicense(status)) {
     return 'Loja liberada para uso permanente.';
@@ -48,7 +48,7 @@ function getCustomerModeDescription(status: LicenseStatus): string {
     return 'Loja liberada para operação normal.';
   }
   if (status.status === 'blocked') return 'Entre em contato com o suporte para liberar a operação.';
-  if (status.status === 'expired') return 'O período de teste terminou. Solicite a ativação da loja.';
+  if (status.status === 'expired') return 'Os 15 dias de teste terminaram. Solicite a ativação da loja para continuar operando.';
   if (status.status === 'invalid') return 'A ativação informada não foi reconhecida.';
   return 'Entre em contato para concluir a liberação da loja.';
 }
@@ -267,7 +267,7 @@ const onFileSelected = async (file: File | null) => {
           {status.status === 'trial' && typeof status.daysRemaining === 'number' && (
             <div className="license-detail-item">
               <strong>Modo da loja</strong>
-              <span>Teste com acesso liberado</span>
+              <span>15 dias com acesso liberado para configuração</span>
             </div>
           )}
         </div>
@@ -399,7 +399,7 @@ const onFileSelected = async (file: File | null) => {
           <li>Gestao completa de <b>vendas, ordem de servico, estoque, financeiro e recibos</b> em um so lugar.</li>
           <li>Operacao por <b>loja identificada por store_id</b>, ajudando a evitar mistura de dados entre clientes.</li>
           <li>Fluxo com <b>backup, suporte e ativacao comercial</b> para manter a operacao segura.</li>
-          {!isRealSuperAdmin && <li>Teste inicial com prazo visivel e liberacao comercial sem complicacao tecnica para a loja.</li>}
+          {!isRealSuperAdmin && <li>Trial inicial de 15 dias para configurar a loja com calma antes do bloqueio por ativação.</li>}
           {!isRealSuperAdmin && <li>Atendimento para ativacao e suporte no WhatsApp <b>(43) 99669-4751</b>.</li>}
         </ul>
       </div>

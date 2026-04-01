@@ -122,7 +122,7 @@ export default function BuyPage() {
           <div className="buy-title">
             <div className="buy-h1">Ativacao necessaria</div>
             <div className="buy-sub">
-              {status.status === 'expired' ? 'Seu periodo de teste terminou.' : 'Esta loja precisa de ativacao para continuar operando.'}
+              {status.status === 'expired' ? 'Os 15 dias de teste terminaram.' : 'Use os 15 dias de trial para configurar tudo. Depois disso, a ativacao sera exigida para continuar operando.'}
               {isDesktopApp() ? ' (Desktop)' : ''}
             </div>
           </div>
@@ -232,7 +232,7 @@ export default function BuyPage() {
         <div className="buy-foot">
           <div className="buy-foot-note">
             {status.status === 'trial' && status.daysRemaining != null ? (
-              <>Voce ainda esta no teste por {status.daysRemaining} dia(s). Depois disso, fale conosco para ativar a loja.</>
+              <>Voce ainda esta no trial de 15 dias por {status.daysRemaining} dia(s). Aproveite para configurar a loja e, depois do prazo, fale conosco para ativar.</>
             ) : (
               <>
                 {status.status === 'active'
