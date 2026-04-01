@@ -6,13 +6,18 @@ import { THERMAL_PRINTER_PROFILES } from '@/services/print/thermalProfiles';
 import './ThermalPrintSettings.css';
 
 export default function ThermalPrintSettings() {
-  const { settings, saving, update, applyProfile } = usePrintSettings();
+  const { settings, saving, update, applyProfile, saveCurrent } = usePrintSettings();
   const [qzStatus, setQzStatus] = useState<'idle' | 'checking' | 'ready' | 'missing'>('idle');
   const [qzPrinters, setQzPrinters] = useState<string[]>([]);
   const [section, setSection] = useState<'geral' | 'qz' | 'visual'>('geral');
   const qzDownloadUrl = 'https://github.com/qzind/tray/releases/download/v2.2.5/qz-tray-2.2.5-x86_64.exe';
 
   const profileOptions = useMemo(() => Object.values(THERMAL_PRINTER_PROFILES), []);
+  const persistedQzPrinters = useMemo(() => {
+    const selected = (settings.qzPrinterName || '').trim();
+    if (!selected) return qzPrinters;
+    return qzPrinters.includes(selected) ? qzPrinters : [selected, ...qzPrinters];
+  }, [qzPrinters, settings.qzPrinterName]);
   const economyModeActive = settings.printDensity === 'compact' && settings.fontSizePx <= 10 && settings.innerMarginMm <= 1.5;
 
   async function handleApplyNormalMode() {
@@ -65,6 +70,21 @@ export default function ThermalPrintSettings() {
           <p>Perfis calibrados para 58mm e 80mm, com base útil, densidade visual e preferências persistentes.</p>
         </div>
         <span className="thermal-settings__badge">{saving ? 'Salvando...' : 'Persistente local'}</span>
+      </div>
+
+      <div className="thermal-settings__savebar">
+        <div className="thermal-settings__savecopy">
+          <strong>Salvar configurações da impressora</strong>
+          <span>Tudo que você selecionar aqui fica gravado localmente para não perder ao atualizar a página.</span>
+        </div>
+        <button
+          type="button"
+          className="thermal-settings__savebtn"
+          onClick={() => { void saveCurrent(); }}
+          disabled={saving}
+        >
+          {saving ? 'Salvando...' : 'Salvar configurações'}
+        </button>
       </div>
 
       <div className="thermal-settings__tabs" role="tablist" aria-label="Seções da impressão térmica">
@@ -212,7 +232,7 @@ export default function ThermalPrintSettings() {
                 onChange={(e) => { void update({ qzPrinterName: e.target.value }); }}
               >
                 <option value="">Selecione a impressora</option>
-                {qzPrinters.map((printer) => (
+                {persistedQzPrinters.map((printer) => (
                   <option key={printer} value={printer}>{printer}</option>
                 ))}
               </select>

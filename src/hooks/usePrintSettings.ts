@@ -42,11 +42,16 @@ export function usePrintSettings() {
     });
   }
 
+  async function saveCurrent() {
+    await persist({ ...settings });
+  }
+
   return {
     settings,
     saving,
     update,
     applyProfile,
+    saveCurrent,
     reload: () => setSettings(loadThermalPrintSettings()),
   };
 }

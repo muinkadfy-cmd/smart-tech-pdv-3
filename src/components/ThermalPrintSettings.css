@@ -28,6 +28,43 @@
   white-space: nowrap;
 }
 
+.thermal-settings__savebar {
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(90, 210, 150, 0.16);
+  background: rgba(13, 23, 27, 0.8);
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.thermal-settings__savecopy {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.thermal-settings__savecopy span {
+  color: var(--text-secondary, #9aa4b2);
+}
+
+.thermal-settings__savebtn {
+  min-height: 42px;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(90, 210, 150, 0.28);
+  background: linear-gradient(135deg, #25d366, #14924a);
+  color: #f7fff9;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 10px 24px rgba(20, 146, 74, 0.22);
+}
+
+.thermal-settings__savebtn:disabled {
+  opacity: 0.72;
+}
+
 .thermal-settings__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -219,6 +256,11 @@
   .thermal-settings__tabs {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .thermal-settings__savebar {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .thermal-settings__qz-guide-head {
