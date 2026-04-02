@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePrintSettings } from '@/hooks/usePrintSettings';
 import { isDesktopApp } from '@/lib/platform';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -30,6 +30,43 @@ export default function ThermalPrintSettings() {
     : company?.logo_url
       ? 'Logo encontrada e pronta para o cupom'
       : 'Sem logo cadastrada nos dados da empresa';
+
+  function isVirtualPrinter(printerName: string): boolean {
+    const normalized = printerName.trim().toLowerCase();
+    if (!normalized) return false;
+    return [
+      'microsoft xps document writer',
+      'microsoft print to pdf',
+      'onenote',
+      'fax',
+      'pdf',
+    ].some((item) => normalized.includes(item));
+  }
+
+  function pickBestQzPrinter(printers: string[], currentPrinter: string): string {
+    const normalizedCurrent = currentPrinter.trim();
+    if (normalizedCurrent && printers.includes(normalizedCurrent) && !isVirtualPrinter(normalizedCurrent)) {
+      return normalizedCurrent;
+    }
+
+    const thermalPriority = [
+      /pos-?58/i,
+      /goldensky/i,
+      /gprinter/i,
+      /tm-?t20/i,
+      /epson/i,
+      /pos-?80/i,
+      /receipt/i,
+    ];
+
+    for (const matcher of thermalPriority) {
+      const match = printers.find((printer) => matcher.test(printer));
+      if (match) return match;
+    }
+
+    const firstNonVirtual = printers.find((printer) => !isVirtualPrinter(printer));
+    return firstNonVirtual || printers[0] || '';
+  }
 
   async function handleApplyNormalMode() {
     const profile = THERMAL_PRINTER_PROFILES[settings.printerProfile];
@@ -64,14 +101,22 @@ export default function ThermalPrintSettings() {
       const printers = await listQzPrinters(settings.qzScriptUrl);
       setQzPrinters(printers);
       setQzStatus(printers.length > 0 ? 'ready' : 'missing');
-      if (!settings.qzPrinterName && printers[0]) {
-        await update({ qzPrinterName: printers[0] });
+      const bestPrinter = pickBestQzPrinter(printers, settings.qzPrinterName);
+      if (bestPrinter && bestPrinter !== settings.qzPrinterName) {
+        await update({ qzPrinterName: bestPrinter });
       }
     } catch {
       setQzStatus('missing');
       setQzPrinters([]);
     }
   }
+
+  useEffect(() => {
+    if (settings.backend !== 'qz-tray') return;
+    void handleLoadQzPrinters();
+    // Intencional: carregar uma vez ao abrir a tela para reconciliar a impressora salva.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <section className="thermal-settings">
